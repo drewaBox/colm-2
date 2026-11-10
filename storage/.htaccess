@@ -1,0 +1,8 @@
+# Private folder: nothing here (uploads, logs) may be opened from the web, even if the main .htaccess rewrite rules do not run.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal | COLM Registrar</title>
+  <script>
+  try {
+    var requestDraft = JSON.parse(sessionStorage.getItem("colmRequestDraft") || "null");
+    if (!requestDraft || !requestDraft.document) window.location.replace("index.html");
+  } catch (error) {
+    window.location.replace("index.html");
+  }
+  if (new URLSearchParams(location.search).get("landing") === "1") {
+    document.documentElement.classList.add("landing-flow");
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=27">
+  <link rel="stylesheet" href="css/request-overlay.css?v=5">
+  <script>(function(){var d=document.documentElement;function ok(){d.classList.add('icons-ready');}if(!document.fonts||!document.fonts.load){ok();return;}document.fonts.load('20px "Material Symbols Rounded"','settings').then(function(f){if(f&&f.length)ok();}).catch(function(){});})();</script>
+</head>
+<body data-portal-role="Student">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="app" id="portalApp" hidden>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img class="logo" src="assets/images/colm_logo.png" alt="COLM logo">
+        <div class="brand-text">
+          <strong id="portalBrandTitle">STUDENT PORTAL</strong>
+          <span>COLM REGISTRAR</span>
+        </div>
+        <button class="collapse-btn" id="collapseBtn" type="button" aria-label="Toggle sidebar"><span class="material-symbol" id="sidebarIcon">left_panel_close</span></button>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-group">
+          <div class="section-title">MAIN</div>
+          <a class="nav-item" href="#" data-page="Dashboard"><span class="icon material-symbol">dashboard</span><span>Dashboard</span></a>
+          <a class="nav-item" href="#" data-page="Document Catalog"><span class="icon material-symbol">description</span><span>Document Catalog</span></a>
+          <a class="nav-item" href="#" data-page="My Requests"><span class="icon material-symbol">assignment_turned_in</span><span>My Requests</span></a>
+        </div>
+        <div class="nav-group">
+          <div class="section-title">ACCOUNT</div>
+          <a class="nav-item" href="#" data-page="My Profile"><span class="icon material-symbol">badge</span><span>My Profile</span></a>
+        </div>
+        <div class="nav-group">
+          <div class="section-title">SUPPORT</div>
+          <a class="nav-item" href="#" data-page="Help &amp; FAQs"><span class="icon material-symbol">quiz</span><span>Help &amp; FAQs</span></a>
+        </div>
+        <div class="nav-group">
+          <div class="section-title">GENERAL</div>
+          <a class="nav-item" href="#" data-page="Settings"><span class="icon material-symbol">settings</span><span>Settings</span></a>
+        </div>
+      </nav>
+
+      <div class="student-card">
+        <strong id="studentName"></strong>
+        <span id="studentRole">Student</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-title">
+          <button class="collapse-btn mobile-sidebar-toggle" id="mobileSidebarBtn" type="button" aria-label="Open sidebar"><span class="material-symbol" id="mobileSidebarIcon">left_panel_open</span></button>
+          <span class="title-icon material-symbol" id="pageIcon">dashboard</span>
+          <span id="pageTitle">Dashboard</span>
+        </div>
+
+        <div class="top-actions">
+          <div class="search" id="searchControl">
+            <button class="search-toggle" id="searchToggle" type="button" aria-label="Open search" aria-expanded="false" aria-controls="searchInput"><span class="search-icon material-symbol">search</span></button>
+            <input id="searchInput" type="search" placeholder="Search" aria-label="Search portal" autocomplete="off" hidden>
+          </div>
+          <button type="button" class="top-icon notif-btn" id="notifBtn" title="Notifications" aria-label="Notifications" aria-expanded="false"><span class="material-symbol">notifications</span><span class="notif-badge" id="notifBadge" hidden>0</span></button>
+          <button type="button" class="top-icon" title="Theme" aria-label="Toggle theme" id="themeBtn"><span class="material-symbol" id="themeIcon">dark_mode</span></button>
+          <div class="profile-menu" id="profileMenu">
+            <div class="avatar material-symbol">person</div>
+            <span id="profileId"></span>
+            <span class="chevron material-symbol">expand_more</span>
+            <div class="profile-dropdown" id="profileDropdown">
+              <div><strong id="profileName"></strong></div>
+              <div id="profileRole">Student</div>
+              <hr>
+              <button type="button" data-page-action="Settings">Settings</button>
+              <button id="logoutBtn" type="button">Log out</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="content" id="content">
+        <div class="dashboard">
+          <header class="dashboard-heading">
+            <div>
+              <p class="dashboard-eyebrow">STUDENT PORTAL</p>
+              <h1>Welcome back, <span id="welcomeName"></span></h1>
+              <p>Keep track of your registrar requests and student services.</p>
+            </div>
+            <time class="dashboard-date" id="dashboardDate"></time>
+          </header>
+
+          <section class="dashboard-section" aria-labelledby="requestOverviewTitle">
+            <div class="dashboard-section-heading">
+              <div>
+                <h2 id="requestOverviewTitle">Request overview</h2>
+                <p>Your document requests at a glance.</p>
+              </div>
+              <a class="dashboard-text-link" href="#" data-page-action="My Requests">View requests <span class="material-symbol">arrow_forward</span></a>
+            </div>
+
+            <div class="stat-cards">
+              <div class="stat-card">
+                <div class="stat-card-icon icon-total"><span class="material-symbol">description</span></div>
+                <div class="stat-card-info">
+                  <strong class="stat-number" id="statTotal">0</strong>
+                  <span class="stat-label" id="statTotalLabel">Total Requests</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-icon icon-processing"><span class="material-symbol">schedule</span></div>
+                <div class="stat-card-info">
+                  <strong class="stat-number" id="statProcessing">0</strong>
+                  <span class="stat-label" id="statProcessingLabel">In Processing</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-icon icon-pending"><span class="material-symbol">credit_card</span></div>
+                <div class="stat-card-info">
+                  <strong class="stat-number" id="statPending">0</strong>
+                  <span class="stat-label" id="statPendingLabel">Pending Payment</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-icon icon-ready"><span class="material-symbol">download</span></div>
+                <div class="stat-card-info">
+                  <strong class="stat-number" id="statReady">0</strong>
+                  <span class="stat-label" id="statReadyLabel">Ready for Claiming</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-icon icon-completed"><span class="material-symbol">check</span></div>
+                <div class="stat-card-info">
+                  <strong class="stat-number" id="statCompleted">0</strong>
+                  <span class="stat-label" id="statCompletedLabel">Released / Completed</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="request-empty" id="dashboardEmpty">
+              <span class="request-empty-icon material-symbol">folder_open</span>
+              <div>
+                <h3>No requests yet</h3>
+                <p>Browse the document catalog to start a request.</p>
+              </div>
+              <a class="dashboard-action" href="#" data-page-action="Document Catalog"><span class="material-symbol">description</span>Browse documents</a>
+            </div>
+          </section>
+
+          <details class="dashboard-section student-request-section student-disclosure" aria-labelledby="myDocRequestsTitle">
+            <summary class="dashboard-section-heading student-disclosure-heading">
+              <span class="student-disclosure-copy"><span class="student-disclosure-title" id="myDocRequestsTitle" role="heading" aria-level="2">My Document Requests</span><span class="student-disclosure-description">Your documents, their status and the soft copy (PDF) downloads.</span></span>
+              <span class="material-symbol student-disclosure-icon" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="student-disclosure-content">
+              <div class="requests-table-wrap student-dashboard-table student-request-table">
+                <table class="requests-table compact">
+                  <thead><tr><th>Request No.</th><th>Document</th><th>Format</th><th>Status</th><th>Payment Status</th><th>Soft Copy</th><th>Actions</th></tr></thead>
+                  <tbody id="myDocsRequestsBody"><tr><td colspan="7" class="requests-empty">Loading...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <details class="dashboard-section student-upload-section student-disclosure" aria-labelledby="myDocsTitle">
+            <summary class="dashboard-section-heading student-disclosure-heading">
+              <span class="student-disclosure-copy"><span class="student-disclosure-title" id="myDocsTitle" role="heading" aria-level="2">My submitted documents</span><span class="student-disclosure-description">The result of the document check for every file you uploaded.</span></span>
+              <span class="doc-summary student-document-summary" id="docSummary"></span>
+              <span class="material-symbol student-disclosure-icon" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="student-disclosure-content">
+              <div class="requests-table-wrap student-dashboard-table student-upload-table">
+                <table class="requests-table">
+                  <thead><tr><th>Document</th><th>Requirement</th><th>File</th><th>Status</th><th>Reason</th></tr></thead>
+                  <tbody id="dashboardDocsBody"><tr><td colspan="5" class="requests-empty">Loading...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <div class="dashboard-lower">
+            <section class="dashboard-section quick-links" aria-labelledby="quickLinksTitle">
+              <h2 id="quickLinksTitle">Quick links</h2>
+              <a class="quick-link" href="#" data-page-action="My Requests"><span class="material-symbol">receipt_long</span><span>View Requests</span><span class="material-symbol quick-link-arrow">arrow_forward</span></a>
+              <a class="quick-link" href="#" data-page-action="Help &amp; FAQs"><span class="material-symbol">quiz</span><span>Frequently asked questions</span><span class="material-symbol quick-link-arrow">arrow_forward</span></a>
+            </section>
+
+            <section class="dashboard-support" aria-labelledby="supportTitle">
+              <span class="dashboard-support-icon material-symbol">support_agent</span>
+              <div>
+                <p class="dashboard-eyebrow">REGISTRAR SUPPORT</p>
+                <h2 id="supportTitle">Need assistance?</h2>
+                <p>Read the frequently asked questions or ask the Registrar Office.</p>
+                <a class="dashboard-text-link" href="#" data-page-action="Help &amp; FAQs">Open the FAQs <span class="material-symbol">arrow_forward</span></a>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="catalog" hidden>
+          <header class="dashboard-heading">
+            <div>
+              <p class="dashboard-eyebrow">STUDENT PORTAL</p>
+              <h1>Document Catalog</h1>
+              <p>Browse available documents and start a request.</p>
+            </div>
+          </header>
+
+          <div class="doc-grid" id="docGrid"><p class="requests-empty">Loading documents...</p></div>
+        </div>
+
+        <div class="requests" hidden>
+  <section class="request-form-panel" id="requestFormPanel" hidden aria-labelledby="requestFormTitle">
+   <div class="request-panel-inner">
+    <header class="request-form-header">
+      <div>
+        <h2 id="requestFormTitle">Document Request Form</h2>
+        <p>Complete each step to submit your registrar request.</p>
+      </div>
+      <button class="request-cancel-btn" id="cancelRequestForm" type="button">Cancel</button>
+    </header>
+
+    <ol class="request-stepper" aria-label="Request steps">
+      <li class="active" data-step-indicator="1"><span>1</span><b>Document &amp; Purpose</b></li>
+      <li data-step-indicator="2" hidden><span>2</span><b>Purpose</b></li>
+      <li data-step-indicator="3"><span>3</span><b>Requirements</b></li>
+      <li data-step-indicator="4"><span>4</span><b>Review</b></li>
+    </ol>
+
+    <form id="documentRequestForm" novalidate>
+      <p class="request-form-message" id="requestFormMessage" role="status" aria-live="polite"></p>
+      <section class="request-step" data-request-step="1">
+        <h3>Step 1: Document, Purpose &amp; Format</h3>
+        <div id="requestDocumentRows"></div>
+        <p class="request-date-note">You pay when you claim your document at the Registrar's Office. Unpaid and unclaimed requests are cancelled 14 days after they are ready.</p>
+
+        <div class="request-purpose-block">
+        <div class="request-two-column" hidden>
+          <div>
+            <label class="request-form-label" for="requestReleaseMethod">Document Format</label>
+            <select class="request-text-input" id="requestReleaseMethod" name="releaseMethod" required></select>
+            <output class="request-date-display" id="requestReleaseMethodFixed" hidden></output>
+            <p class="request-date-note" id="formatHint" aria-live="polite"></p>
+          </div>
+        </div>
+        </div>
+        <select id="requestPaymentMethod" name="paymentMethod" hidden>
+          <option value="Cash" selected>Cash</option>
+        </select>
+        <div class="request-form-actions">
+          <button class="request-next-btn" id="purposeNextButton" type="button" data-next-step="3">Proceed <span aria-hidden="true"></span></button>
+        </div>
+      </section>
+
+      <section class="request-step" data-request-step="3" hidden>
+        <h3>Step 3: Requirements</h3>
+        <p class="request-step-description">Complete the applicable form and any required uploads for your selected documents.</p>
+        <section id="studentVerificationFormSection" class="credential-request-section" hidden aria-labelledby="studentVerificationFormTitle">
+          <div class="credential-request-heading">
+            <div>
+              <p class="credential-office-label">COLLEGE OF OUR LADY OF MERCY OF PULILAN FOUNDATION, INC.</p>
+              <p>OFFICE OF THE REGISTRAR</p>
+            </div>
+            <span class="credential-form-mark">STUDENT VERIFICATION</span>
+          </div>
+          <h4 id="studentVerificationFormTitle">Student Verification</h4>
+          <p class="request-date-note">Confirm your student information for this Certification request.</p>
+          <div class="credential-form-panel">
+            <div class="credential-fields-grid">
+              <label>Student ID<input class="request-text-input" id="studentVerificationId" maxlength="30" required></label>
+              <label>Student Name<input class="request-text-input" id="studentVerificationName" maxlength="120" required></label>
+              <label>Course/Program<input class="request-text-input" id="studentVerificationCourse" maxlength="100" required></label>
+              <label>Academic Year<input class="request-text-input" id="studentVerificationAcademicYear" maxlength="9" pattern="\d{4}-\d{4}" placeholder="2025-2026" required></label>
+              <label>Grade Level<input class="request-text-input" id="studentVerificationGradeLevel" maxlength="40" required></label>
+            </div>
+          </div>
+        </section>
+        <section id="credentialFormSection" class="credential-request-section" hidden aria-labelledby="credentialFormTitle">
+          <div class="credential-request-heading">
+            <div>
+              <p class="credential-office-label">COLLEGE OF OUR LADY OF MERCY OF PULILAN FOUNDATION, INC.</p>
+              <p>OFFICE OF THE REGISTRAR</p>
+            </div>
+            <span class="credential-form-mark">REQUEST FORM</span>
+          </div>
+          <h4 id="credentialFormTitle">Request for Credentials / Documents</h4>
+          <p class="request-date-note">Complete this form when requesting a Transcript of Records or Honorable Dismissal. This filled-out form is the only requirement for those documents; no extra file upload is needed.</p>
+          <div class="credential-form-body">
+            <section class="credential-form-panel">
+              <h5>Personal Information</h5>
+              <div class="credential-fields-grid">
+                <label>Last name<input class="request-text-input" id="credentialLastName" maxlength="80" autocomplete="family-name" readonly aria-readonly="true" required></label>
+                <label>First name<input class="request-text-input" id="credentialFirstName" maxlength="80" autocomplete="given-name" readonly aria-readonly="true" required></label>
+                <label>Middle name<input class="request-text-input" id="credentialMiddleName" maxlength="80" autocomplete="additional-name"></label>
+                <label class="credential-field-wide">House no. / Street / Subdivision<input class="request-text-input" id="credentialStreet" maxlength="120" autocomplete="address-line1" placeholder="e.g. 123 Rizal St., Purok 2"></label>
+                <label>Province<select class="request-text-input" id="credentialProvince" required><option value="">Loading provinces...</option></select></label>
+                <label>City / Municipality<select class="request-text-input" id="credentialCity" required disabled><option value="">Choose province first</option></select></label>
+                <label>Barangay<select class="request-text-input" id="credentialBarangay" required disabled><option value="">Choose city first</option></select></label>
+                <input type="hidden" id="credentialAddress">
+                <label>Birthdate<input class="request-text-input" id="credentialBirthdate" type="date" required></label>
+                <label>Gender<select class="request-text-input" id="credentialGender" required><option value="">Choose gender</option><option>Female</option><option>Male</option></select></label>
+                <label>Mobile no.<input class="request-text-input" id="credentialMobile" type="tel" inputmode="numeric" maxlength="14" placeholder="+63 9XXXXXXXXX" autocomplete="tel-national" required></label>
+              </div>
+            </section>
+            <section class="credential-form-panel">
+              <h5>Academic Information</h5>
+              <div class="credential-fields-grid">
+                <label>Student no.<input class="request-text-input" id="credentialStudentNo" readonly aria-readonly="true"></label>
+                <label>Course<input class="request-text-input" id="credentialCourse" maxlength="100" readonly aria-readonly="true"></label>
+              </div>
+              <fieldset class="credential-graduation-fields">
+                <legend>School information</legend>
+                <div class="credential-fields-grid">
+                  <label class="credential-field-wide" id="credentialAcademicYearLabel"><span id="credentialAcademicYearText">School year</span><input class="request-text-input is-locked" id="credentialAcademicYear" readonly aria-readonly="true"></label>
+                  <label>Elementary school<input class="request-text-input" id="credentialElementaryName" maxlength="120" placeholder="School name"></label>
+                  <label>Elementary year graduated<select class="request-text-input school-year-select" id="credentialElementaryYear"><option value="">Year</option></select></label>
+                  <label>Junior high school<input class="request-text-input" id="credentialJuniorHighName" maxlength="120" placeholder="School name"></label>
+                  <label>Junior high year graduated<select class="request-text-input school-year-select" id="credentialJuniorHighYear"><option value="">Year</option></select></label>
+                  <label>Senior high school<input class="request-text-input" id="credentialSeniorHighName" maxlength="120" placeholder="School name"></label>
+                  <label>Senior high year graduated<select class="request-text-input school-year-select" id="credentialSeniorHighYear"><option value="">Year</option></select></label>
+                </div>
+              </fieldset>
+            </section>
+            <section class="credential-form-panel">
+              <h5>Document and Purpose</h5>
+              <div class="credential-requested-documents" id="credentialRequestedDocuments"></div>
+              <fieldset class="credential-purpose-options">
+                <legend>Purpose of request</legend>
+                <output id="credentialPurposeDisplay" aria-live="polite">Choose a purpose in Step 1.</output>
+              </fieldset>
+              <label>Notes, if any<textarea class="request-text-input" id="credentialNotes" rows="3" maxlength="1000"></textarea></label>
+            </section>
+          </div>
+        </section>
+        <p id="studentVerificationStatus" class="form-message student-verification-status" role="status" aria-live="polite" aria-busy="false">
+          <span id="studentVerificationSpinner" class="student-verification-spinner" aria-hidden="true" hidden></span>
+          <span id="studentVerificationStatusText"></span>
+        </p>
+        <div id="requestRequirementsList"></div>
+        <p class="request-date-note" id="requestUploadFormatsNote">Accepted formats: PDF, JPG, JPEG or PNG. Use a clear, complete copy that shows your name.</p>
+        <div class="request-form-actions request-form-actions-split">
+          <button class="request-back-btn" type="button" data-previous-step="1"> Back</button>
+          <button class="request-next-btn" id="requirementsNextButton" type="button" data-next-step="4">Proceed <span aria-hidden="true"></span></button>
+        </div>
+      </section>
+
+      <section class="request-step" data-request-step="4" hidden>
+        <h3>Review Application Summary</h3>
+        <div class="request-review-card">
+          <div class="request-review-grid">
+                        <div><span>Attachments</span><strong id="reviewAttachments">None</strong></div>
+            <div id="credentialReview" hidden><span>Credential request form</span><strong id="credentialSummary"></strong></div>
+          </div>
+          <div class="request-review-table-wrap">
+            <table class="request-review-table">
+              <thead><tr><th>Document</th><th>Purpose</th><th>Copies</th><th>Unit price</th><th>Total fee</th></tr></thead>
+              <tbody id="requestReviewRows"></tbody>
+            </table>
+          </div>
+          <div class="request-review-total"><span>Total fee</span><strong id="reviewTotal">0.00</strong></div>
+        </div>
+        <div class="request-form-actions request-form-actions-split">
+          <button class="request-back-btn" type="button" data-previous-step="3"> Back</button>
+          <button class="request-submit-btn" id="submitRequestBtn" type="submit">Submit <span aria-hidden="true"></span></button>
+        </div>
+      </section>
+    </form>
+
+    <section class="request-success" id="requestSuccess" hidden aria-live="polite">
+      <span class="request-success-icon material-symbol">task_alt</span>
+      <h3>Request Successfully Submitted!</h3>
+      <p><span id="requestSuccessText">Your request was submitted.</span></p>
+      <div class="request-success-qr" id="requestSuccessQr">
+        <p class="request-success-qr-status" id="requestSuccessQrStatus" role="status" aria-live="polite">Preparing your request QR code…</p>
+        <div class="request-success-qr-image" id="requestSuccessQrImage" hidden></div>
+        <a class="request-next-btn request-success-qr-download" id="requestSuccessQrDownload" href="#" download hidden>Download request QR</a>
+      </div>
+      <div class="request-email-notice request-tracking-fallback" id="requestTrackingFallback" hidden>
+        <div>
+          <strong>We could not send the email right now</strong>
+          <p>Please keep your tracking number: <b id="requestTrackingNumber"></b></p>
+        </div>
+      </div>
+      <div class="request-success-actions" style="margin-top:24px">
+        <button class="request-next-btn" id="requestSuccessOk" type="button">OK</button>
+      </div>
+      <style>
+        .request-email-notice{display:flex;align-items:flex-start;gap:14px;max-width:640px;margin:22px auto 0;padding:18px 20px;text-align:left;border:1px solid var(--border,#cfdcd5);border-radius:14px;background:var(--primary-soft,#e3efe9);color:var(--text,#1f2933)}
+        .request-email-notice[hidden]{display:none}
+        .request-email-notice .material-symbol{flex:none;font-size:32px;color:var(--primary,#0b4a36)}
+        .request-email-notice strong{display:block;font-size:1.05rem;color:var(--primary,#0b4a36)}
+        .request-email-notice p{margin:4px 0 0;line-height:1.5}
+        .request-success-qr{display:grid;justify-items:center;gap:8px;margin:18px auto 0}
+        .request-success-qr-status{margin:0;color:var(--muted,#66756d);font-size:13px}
+        .request-success-qr-status.is-error{color:var(--danger-text,#a93226)}
+        .request-success-qr-image{padding:10px;border:1px solid var(--border,#cfdcd5);border-radius:10px;background:#fff}
+        .request-success-qr-image[hidden],.request-success-qr-download[hidden]{display:none}
+        .request-success-qr-image .qr-canvas{display:block;width:180px;height:180px;image-rendering:pixelated}
+        .request-success-qr-download{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+        @media(max-width:480px){.request-success-qr-image .qr-canvas{width:160px;height:160px}}
+      </style>
+    </section>
+   </div>
+  </section>
+
+  <div class="requests-card" id="requestsHistoryCard">
+    <div class="requests-header">
+      <h2>My Document Requests History</h2>
+      <button class="requests-new-btn" id="startNewRequestBtn" type="button"><span class="material-symbol" aria-hidden="true">add</span><span>New request</span></button>
+    </div>
+
+    <div class="filter-bar" id="requestFilters" role="search" aria-label="Filter requests">
+      <label>Status<select class="request-text-input" id="statusFilter"><option value="">All statuses</option></select></label>
+      <label>Payment<select class="request-text-input" id="paymentFilter"><option value="">All</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option></select></label>
+      <label>Document<select class="request-text-input" id="documentFilter"><option value="">All documents</option></select></label>
+      <label>From<input class="request-text-input" type="date" id="dateFrom"></label>
+      <label>To<input class="request-text-input" type="date" id="dateTo"></label>
+      <button class="request-back-btn filter-reset" id="filtersReset" type="button">Reset filters</button>
+    </div>
+    <p class="filter-count" id="requestCount" aria-live="polite"></p>
+
+    <div class="requests-table-wrap">
+      <table class="requests-table">
+        <thead>
+          <tr>
+            <th>Tracking #</th>
+            <th>Requester</th>
+            <th>Document</th>
+            <th>Amount</th>
+            <th>Date Release</th>
+            <th>Payment</th>
+            <th>Payment method</th>
+            <th>Status</th>
+            <th>Overdue</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr>
+            <td colspan="10" class="requests-empty">No requests found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+                <div class="profile-page" hidden>
+          <header class="dashboard-heading">
+            <div><p class="dashboard-eyebrow">ACCOUNT</p><h1>My Profile</h1><p>Your student information and document verification status.</p></div>
+          </header>
+          <div id="profileContent"><p class="requests-empty">Loading...</p></div>
+          <section class="requests-card" id="validationHistoryCard" aria-labelledby="validationHistoryTitle">
+            <div class="requests-header"><h2 id="validationHistoryTitle">Master List Validation History</h2></div>
+            <p>Each semester your record is checked against the school's master list. Earlier semesters are archived and kept here for reference.</p>
+            <div id="validationHistoryBody"><p class="requests-empty">Loading...</p></div>
+          </section>
+        </div>
+        
+        <div class="help-page" hidden>
+          <header class="dashboard-heading">
+            <div>
+              <p class="dashboard-eyebrow">SUPPORT</p>
+              <h1>Help &amp; FAQs</h1>
+              <p>Answers to common questions about requesting documents.</p>
+            </div>
+          </header>
+          <div class="info-card">
+            <h3>How do I request a document?</h3>
+            <p>Open Document Catalog, choose a document, upload every required file, then submit. The system checks your files and the Registrar reviews them.</p>
+            <h3>How are my documents checked?</h3>
+            <p>Every file is checked when you upload it: it must be a supported file type, readable, complete, the right document, and show your name. If it is declined you will see the reason and can upload a clearer or correct copy. The Registrar still reviews and approves your documents.</p>
+            <h3>What if the Registrar asks for a correction?</h3>
+            <p>You will get a notification. Open My Requests, click View, and upload the corrected files.</p>
+            <h3>How do I pay?</h3>
+            <p>You pay when you claim your document. Bring a valid ID. The Registrar will set your expected release date and email you when it is ready.</p>
+            <h3>Who can I contact?</h3>
+            <p>Visit the Registrar's Office during office hours for assistance.</p>
+          </div>
+        </div>
+        <div class="settings-page" hidden>
+          <header class="dashboard-heading">
+            <div>
+              <p class="dashboard-eyebrow">GENERAL</p>
+              <h1>Settings</h1>
+              <p>Change your password.</p>
+            </div>
+          </header>
+          <form class="info-card settings-form" id="passwordForm" novalidate>
+            <label for="currentPassword">Current password</label>
+            <input class="request-text-input" id="currentPassword" type="password" autocomplete="current-password" required>
+            <label for="newPassword">New password (at least 8 characters)</label>
+            <span class="password-field">
+              <input class="request-text-input" id="newPassword" type="password" autocomplete="new-password" required>
+              <button class="eye-btn material-symbol" type="button" data-eye="newPassword" aria-label="Show new password">visibility</button>
+            </span>
+            <label for="confirmPassword">Confirm new password</label>
+            <span class="password-field">
+              <input class="request-text-input" id="confirmPassword" type="password" autocomplete="new-password" required>
+              <button class="eye-btn material-symbol" type="button" data-eye="confirmPassword" aria-label="Show confirm password">visibility</button>
+            </span>
+            <p class="form-message" id="passwordMessage" role="status" aria-live="polite"></p>
+            <button class="request-next-btn" type="submit">Change password</button>
+          </form>
+        </div>
+
+<div class="org-chart" hidden>
+  <header class="dashboard-heading">
+    <div>
+      <p class="dashboard-eyebrow">STUDENT PORTAL</p>
+      <h1>Organizational Chart</h1>
+    </div>
+  </header>
+
+  <div class="org-scroll">
+    <div class="org-tree">
+      <ul class="org-level org-level-root">
+        <li class="org-node org-node-president">
+          <div class="org-card">
+            <div class="org-card-top">
+              <div class="org-photo"></div>
+              <div class="org-info">
+                <strong>Santiago C. Castillo</strong>
+                <span>President</span>
+              </div>
+            </div>
+          </div>
+
+          <ul class="org-level org-level-leadership">
+            <li class="org-node org-node-vp">
+              <div class="org-card">
+                <div class="org-card-top">
+                  <div class="org-photo"></div>
+                  <div class="org-info">
+                    <strong>Arnuldo G. Magdaong, LPT, DBA (C)</strong>
+                    <span>Vice President for Administration and Student Services</span>
+                  </div>
+                </div>
+              </div>
+              <ul class="org-level org-level-registrars">
+            <!-- OIC-Registrar -->
+            <li class="org-node org-node-college-registrar">
+              <div class="org-card">
+                <div class="org-card-top">
+                  <div class="org-photo"></div>
+                  <div class="org-info">
+                    <strong>Limuel R. dela Cruz, CFMA, MBA (C)</strong>
+                    <span>College Registrar</span>
+                  </div>
+                </div>
+              </div>
+
+              <ul class="org-level org-level-college-team">
+                    <li>
+                      <div class="org-card">
+                        <div class="org-card-top">
+                          <div class="org-photo"></div>
+                          <div class="org-info">
+                            <strong>Shella Marie Venturina</strong>
+                            <span>Administrative Assistant</span>
+                            <em>Receiving</em>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="org-card">
+                        <div class="org-card-top">
+                          <div class="org-photo"></div>
+                          <div class="org-info">
+                            <strong>Dianara Pearl A. Cruz, LPT</strong>
+                            <span>Administrative Assistant</span>
+                            <em>Releasing</em>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="org-card">
+                        <div class="org-card-top">
+                          <div class="org-photo"></div>
+                          <div class="org-info">
+                            <strong>Gilaiza Salvador</strong>
+                            <span>Administrative Assistant</span>
+                            <em>HIMD, CSD, &amp; TED</em>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    <li class="org-node org-node-admissions">
+                      <div class="org-card">
+                        <div class="org-card-top">
+                          <div class="org-photo"></div>
+                          <div class="org-info">
+                            <strong>Jeremie Avilledo</strong>
+                            <span>Administrative Assistant</span>
+                            <em>AMD, ASD</em>
+                          </div>
+                        </div>
+                      </div>
+                      <ul class="org-level org-level-admissions-team">
+                        <li>
+                          <div class="org-card">
+                            <div class="org-card-top">
+                              <div class="org-photo"></div>
+                              <div class="org-info">
+                                <strong>Ma. Carina Anne E. Ordonio, LPT</strong>
+                                <span>Administrative Assistant</span>
+                                <em>Scholarship Coordinator</em>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                        <li>
+                          <div class="org-card">
+                            <div class="org-card-top">
+                              <div class="org-photo"></div>
+                              <div class="org-info">
+                                <strong>Precious Buenavixen Star Burton</strong>
+                                <span>Admission Officer</span>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      <div class="org-card">
+                        <div class="org-card-top">
+                          <div class="org-photo"></div>
+                          <div class="org-info">
+                            <strong>Michaela Navalta</strong>
+                            <span>Administrative Assistant</span>
+                            <em>CJED</em>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+              </ul>
+            </li>
+
+            <!-- OIC Registrar - Basic Education -->
+            <li class="org-node org-node-basic-registrar">
+              <div class="org-card">
+                <div class="org-card-top">
+                  <div class="org-photo"></div>
+                  <div class="org-info">
+                    <strong>Rona Mae B. Mendoza, LPT</strong>
+                    <span>Registrar for Basic Education Department</span>
+                  </div>
+                </div>
+              </div>
+
+              <ul class="org-level org-level-basic-team">
+                <li>
+                  <div class="org-card">
+                    <div class="org-card-top">
+                      <div class="org-photo"></div>
+                      <div class="org-info">
+                        <strong>Liana Genesis C. Flores</strong>
+                        <span>Administrative Assistant</span>
+                        <em>Basic Education</em>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="org-legend">
+    <span><strong>HIMD</strong>  Hospitality and Institutional Management</span>
+    <span><strong>TED</strong>  Teacher Education</span>
+    <span><strong>CSD</strong>  Computer Studies</span>
+    <span><strong>AMD</strong>  Accountancy and Management</span>
+    <span><strong>ASD</strong>  Allied Science</span>
+    <span><strong>CJED</strong>  Criminal Justice Education</span>
+  </div>
+</div>
+
+        <footer class="site-footer">
+          <p>COLM Registrar Document Request &amp; Tracking System &copy; 2026 COLM.</p>
+        </footer>
+      </section>
+    </main>
+  </div>
+
+
+  <script src="js/api.js"></script>
+  <script src="js/upload.js"></script>
+  <script src="js/auth.js?v=5"></script>
+  <script src="js/navigation.js?v=3"></script>
+  <script src="js/notifications.js?v=3"></script>
+  <script src="js/requests.js?v=11"></script>
+  <script src="js/profile.js?v=2"></script>
+  <script src="js/validation_history.js"></script>
+  <script src="js/softcopy.js"></script>
+  <script src="js/qr.js"></script>
+  <script src="js/address.js?v=1"></script>
+  <script src="js/newrequest.js?v=50"></script>
+</body>
+</html>

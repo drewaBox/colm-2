@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COLM Document Request System</title>
+<meta name="description" content="Request school documents online from COLM and track the status of your request.">
+<link rel="icon" href="assets/images/colm_logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/landing.css?v=36">
+<script>
+try { if (localStorage.getItem("colmTheme") === "dark") document.documentElement.classList.add("dark"); } catch (error) {}
+</script>
+<style>
+#reqForm button[type="submit"][data-state="checking"]{opacity:.9;cursor:progress}
+#reqForm button[type="submit"][data-state="ok"]{background:#1b7f4b;border-color:#1b7f4b;color:#fff}
+#reqForm button[type="submit"][data-state="error"]{background:#b3261e;border-color:#b3261e;color:#fff}
+.req-spin{display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:reqspin .7s linear infinite}
+.req-spin.big{width:34px;height:34px;margin:0 0 14px;color:#0b4f3a;border-width:3px}
+@keyframes reqspin{to{transform:rotate(360deg)}}
+/* The next step opens inside this same dialog (same backdrop), so it stays "here" as an overlay. */
+dialog.req-dlg.wizard{width:min(980px,96vw);max-width:none;padding:0;background:transparent;box-shadow:none;border-radius:0;overflow:visible}
+dialog.req-dlg.wizard>.dh,dialog.req-dlg.wizard>#reqForm,dialog.req-dlg.wizard>.dx{display:none}
+.next-step-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:28px 36px;border-radius:16px;background:#fff;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.35);color:#0b4f3a;font-weight:600}
+.next-step-card p{margin:0}
+.next-step-frame{display:block;position:relative;width:100%;height:min(90vh,900px);border:0;background:transparent!important;color-scheme:light;opacity:0;transition:opacity .2s}
+.next-step-frame.ready{opacity:1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+<symbol id="i-fileplus" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M21.4 10.9a1 1 0 0 0 0-1.8L12.8 5.2a2 2 0 0 0-1.6 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+<symbol id="i-idcard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5.5 16c.5-1.5 1.7-2 2.5-2s2 .5 2.5 2M14 10h4M14 14h3"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="12" r=".6"/><circle cx="12" cy="12" r=".6"/><circle cx="16" cy="12" r=".6"/></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-mega" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="m15.5 12.9 1.5 9.1-5-3-5 3 1.5-9.1"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+<symbol id="i-brief" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+</defs></svg>
+<header><div class="wrap bar">
+  <a class="brand" href="#home" onclick="event.preventDefault(); closeAll(); document.getElementById('home').scrollIntoView({behavior:'smooth', block:'start'}); return false;"><img src="assets/images/colm_logo.png" alt="COLM logo"><div><b>COLM</b><span>Document Request System</span></div></a>
+  <nav id="landingNavigation">
+    <a class="on" href="#home" aria-label="Home" title="Home" onclick="event.preventDefault(); closeAll(); document.getElementById('home').scrollIntoView({behavior:'smooth', block:'start'}); return false;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span class="nav-label">Home</span></a>
+    <a href="#request" data-open="all" aria-label="Request" title="Request" onclick="event.preventDefault(); openAll(); return false;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg><span class="nav-label">Request</span></a>
+    <a href="#track" aria-label="Upload QR" title="Upload QR" onclick="event.preventDefault(); openTrack(); return false;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3"/></svg><span class="nav-label">Upload QR</span></a>
+    <a href="#faq" aria-label="FAQ" title="FAQ" onclick="event.preventDefault(); openFaq(); return false;"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.6 9a2.5 2.5 0 1 1 4.3 1.7c-1.1 1-1.9 1.2-1.9 2.8M12 17h.01"/></svg><span class="nav-label">FAQ</span></a>
+  </nav>
+  <a class="staff-login-secret" id="staffLoginSecret" href="login.html" target="_blank" rel="noopener" hidden>Staff login</a>
+  <button class="landing-theme-toggle compact" id="landingThemeToggle" type="button" role="switch" aria-checked="false" aria-label="Switch to dark mode" title="Light / Dark mode">
+    <span class="theme-knob" aria-hidden="true">
+      <svg class="theme-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+      <svg class="theme-moon" viewBox="0 0 24 24"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg>
+    </span>
+  </button>
+</div></header>
+
+<div class="request-panel-shell" id="requestModuleWrapper">
+  <div id="allDlg" class="request-all-panel" hidden>
+    <div class="allhead"><div><h3>Request a Document</h3><p>Browse available documents and start a request.</p></div><button type="button" class="panel-close" aria-label="Close and go back to Home" title="Close" onclick="goHome()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <input id="q" type="search" placeholder="Search documents…" aria-label="Search documents">
+    <div class="doc-grid" id="allDocs"></div>
+    <p class="none" id="none" hidden>No documents match your search.</p>
+  </div>
+</div>
+
+<div class="track-panel-shell" id="trackModuleWrapper">
+  <section class="track-panel" id="track" hidden aria-labelledby="trackTitle">
+    <div class="track-window">
+      <div class="track-topbar">
+        <img src="assets/images/colm_registrar_logo.png" alt="" class="track-seal">
+        <button type="button" class="panel-close" aria-label="Close and go back to Home" title="Close" onclick="goHome()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="track-head">
+        <h2 id="trackTitle">Find Your Request</h2>
+        <p class="track-number" id="trackSubtitle">Choose a tracking number or upload your request QR code.</p>
+      </div>
+      <form class="track-lookup" id="trackForm" novalidate>
+        <div class="track-mode-choice" role="group" aria-label="Choose how to find your request">
+          <button class="track-mode-btn is-active" type="button" data-track-mode="number" aria-pressed="true">Tracking number</button>
+          <button class="track-mode-btn" type="button" data-track-mode="qr" aria-pressed="false">Upload QR</button>
+        </div>
+        <div class="track-input-row" id="trackNumberMode">
+          <input id="trackRefInput" type="text" placeholder="Enter your tracking number" aria-label="Tracking number" autocomplete="off">
+        </div>
+        <div class="track-qr-mode" id="trackQrMode" hidden>
+          <label class="track-upload-label" for="trackQrInput">
+            <span class="track-upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></span>
+            <span class="track-upload-copy"><strong>Upload QR</strong><small id="trackQrFileName" aria-live="polite">Select the QR image saved with your request</small></span>
+            <span class="track-upload-action" aria-hidden="true">Browse files</span>
+            <input id="trackQrInput" type="file" accept="image/*">
+          </label>
+          <p class="track-qr-note">Your QR is scanned automatically to find your request.</p>
+        </div>
+        <p id="trackLookupMsg" class="track-lookup-msg" aria-live="polite"></p>
+      </form>
+      <div class="track-card is-empty" id="trackCard">
+        <div class="timeline" id="statusTimeline"></div>
+        <aside class="track-details" id="trackDetails" aria-live="polite"></aside>
+      </div>
+      <div class="updated-row"><span>Updated:</span><time id="trackUpdated">—</time></div>
+    </div>
+  </section>
+</div>
+
+<div class="track-panel-shell" id="faqModuleWrapper">
+  <section class="track-panel faq-panel" id="faqPanel" hidden aria-labelledby="faqTitle">
+    <div class="track-window">
+      <div class="track-topbar">
+        <img src="assets/images/colm_registrar_logo.png" alt="" class="track-seal">
+        <button type="button" class="panel-close" aria-label="Close and go back to Home" title="Close" onclick="goHome()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="track-head">
+        <h2 id="faqTitle">Frequently Asked Questions</h2>
+        <p class="track-number">Quick answers about requesting documents.</p>
+      </div>
+      <div class="faq-groups">
+        <section class="faq-cat" aria-label="Requesting Documents">
+          <h3>Requesting Documents</h3>
+          <details><summary>What documents can I request?</summary><p>You can request the Transcript of Records (₱250), Honorable Dismissal (₱350), Diploma (₱500), Certified True Copy of Academic Record (₱50), and these ₱100 documents:</p><ul><li>Certificate of Enrollment (COE)</li><li>Certificate of Good Moral Character</li><li>Certification of Grades (COG)</li><li>Certificate of No Pending Requirement</li><li>Certificate of Registration (COR)</li><li>Certificate of Graduation</li><li>Certificate of Units Earned</li><li>Certificate of General Weighted Average (GWA)</li><li>Internship/Training Certification</li><li>NSTP/CWTS-related Certification</li><li>Other Certifications</li></ul><p>See the Available Documents on the Home page for the full list.</p></details>
+          <details><summary>How do I request a document?</summary><p>Log in to your student account, open the Document Catalog, and choose the document. Fill out the form, upload the files it asks for, choose how you will pay and how you will receive it, then submit. You will get a reference number (your Request ID) and a QR code for your request.</p></details>
+          <details><summary>What requirements do I need?</summary><p>It depends on the document:</p><ul><li><b>Student verification</b> (most certificates): the system checks your student record. You only upload the files it asks for.</li><li><b>Accomplished request form</b> (Transcript of Records and Honorable Dismissal).</li><li><b>Certified True Copy:</b> the record to be certified, or a signed request form.</li><li><b>Diploma:</b> bring the physical payment receipt when you claim it.</li></ul><p>Click a document on the Home page to see its exact requirements. Every file you upload is checked: it must be readable, complete, the right document, and show your name.</p></details>
+        </section>
+        <section class="faq-cat" aria-label="Request Status">
+          <h3>Request Status</h3>
+          <details><summary>How can I check my request status?</summary><p>Choose Upload QR in the navigation. Enter the tracking number from your email, or choose Upload QR and select the QR image saved with your request. You can also log in and open My Requests to see your requests and their status.</p></details>
+          <details><summary>What do the request statuses mean?</summary><ul><li><b>Pending:</b> your request was received.</li><li><b>Under Verification:</b> your documents and payment are being checked.</li><li><b>Needs Correction:</b> something must be fixed. Open the request, read the reason, and upload the correct files.</li><li><b>Approved:</b> your document is being prepared or is ready for release.</li><li><b>Completed:</b> your document was released.</li><li><b>Rejected:</b> the request was not approved. See the remarks for the reason.</li></ul></details>
+          <details><summary>How long does processing take?</summary><p>Most documents are processed on the same business day. The Transcript of Records and Diploma take 5–7 working days, and the Certificate of GWA takes 1–3 working days. The expected date is shown on your request.</p></details>
+        </section>
+        <section class="faq-cat" aria-label="Release & Claiming">
+          <h3>Release & Claiming</h3>
+          <details><summary>How will I know if my document is ready?</summary><p>You will get a notification in your account, and the status of your request changes to Approved (Ready for Release). Soft copies (for example COG and COR) can be downloaded from your dashboard once they are ready.</p></details>
+          <details><summary>How can I claim my document?</summary><p>Go to the Registrar's Office on your claim date, between 9:00 A.M. and 4:00 P.M. only. Bring a valid ID and the hard copy of your payment receipt. Your request is marked Completed once it is released.</p></details>
+          <details><summary>Can someone else claim it for me?</summary><p>Yes. Your representative must bring your ID and an authorization letter from you.</p></details>
+        </section>
+        <section class="faq-cat" aria-label="Problems & Support">
+          <h3>Problems & Support</h3>
+          <details><summary>What if I entered incorrect information?</summary><p>If the system or the Registrar finds a problem, your request becomes Needs Correction. Open it from My Requests, read what to fix, and upload the corrected files. If you already submitted and noticed a mistake yourself, contact the Registrar's Office as soon as possible, before your document is released.</p></details>
+          <details><summary>What if I lost my Request ID?</summary><p>Log in and open My Requests. Your tracking number is listed beside every request, and the QR code and notifications also show it. If you cannot log in, visit the Registrar's Office with a valid ID.</p></details>
+          <details><summary>What if my request is rejected?</summary><p>Open the request and read the remarks to see the reason. You can submit a new request once the rejected one is closed. If you already paid, contact the Registrar's Office to discuss the payment.</p></details>
+        </section>
+      </div>
+    </div>
+  </section>
+</div>
+
+<main id="home">
+<section class="hero"><div class="wrap">
+  <div>
+    <p class="kick">— COLM | Student Services</p>
+    <h1>Get Your School Documents Fast, Easy, and Convenient</h1>
+    <p class="lead">Request your school documents online without the hassle. Fill out the form, track your request, and get updates in real time.</p>
+    <div class="cta"><a class="btn fill" href="#request" data-open="all" onclick="event.preventDefault(); openAll(); return false;">Request a Document →</a>    <a class="btn" href="#track" onclick="event.preventDefault(); openTrack(); return false;">Upload QR / Check Status</a></div>
+  </div>
+</div></section>
+
+<div class="feat"><div class="wrap">
+  <div><svg class="ic"><use href="#i-shield"/></svg><p><b>Secure &amp; Reliable</b><span>Your information is protected with our secure system.</span></p></div>
+  <div><svg class="ic"><use href="#i-clock"/></svg><p><b>Real-Time Tracking</b><span>Check the status of your request anytime, anywhere.</span></p></div>
+  <div><svg class="ic"><use href="#i-bell"/></svg><p><b>Get Notified</b><span>Receive updates via email and on the tracking page.</span></p></div>
+  <div><svg class="ic"><use href="#i-bolt"/></svg><p><b>Fast Processing</b><span>We make sure your documents are processed on time.</span></p></div>
+</div></div>
+
+<section class="blk" id="request">
+  <div class="wrap two">
+    <div id="requirements">
+      <h2>Available Documents</h2>
+      <p class="sub">Request the documents you need. Click on each document to see the requirements and estimated processing time.</p>
+      <div class="docs" id="docs"></div>
+    </div>
+    <div id="how-it-works">
+      <h2>How It Works</h2>
+      <p class="sub">Get your document in just a few simple steps.</p>
+      <ol class="how">
+        <li><em>1</em><div class="ico"><svg class="ic"><use href="#i-fileplus"/></svg></div><div><b>Request a Document</b><span>Fill out the online form and provide the required details.</span></div></li>
+        <li><em>2</em><div class="ico"><svg class="ic"><use href="#i-qr"/></svg></div><div><b>Find Your Request</b><span>Enter your tracking number or upload your request QR image to check its status.</span></div></li>
+        <li><em>3</em><div class="ico"><svg class="ic"><use href="#i-check"/></svg></div><div><b>Receive Your Document</b><span>Get notified when your document is ready for release.</span></div></li>
+      </ol>
+    </div>
+  </div>
+  <div class="wrap"><div class="help"><div class="hl"><div class="ico"><svg class="ic"><use href="#i-mega"/></svg></div><div><b>Need Assistance?</b><span>Check our FAQ section or contact the registrar’s office for further inquiries.</span></div></div><a class="btn" href="#faq" onclick="event.preventDefault(); openFaq(); return false;"><svg class="ic sm"><use href="#i-user"/></svg>Go to FAQ</a></div></div>
+</section>
+</main>
+
+<footer><strong>College of Our Lady of Mercy of Pulilan Foundation, Inc.</strong><br>Registrar Document Request &amp; Tracking System &copy; 2026 COLM</footer>
+
+<style>.req-dlg [data-locked]{pointer-events:none;background:#f1f4f2;color:#6f7f76;border-color:#dbe3de;user-select:none}
+.req-dlg .req-input-wrap:has([data-locked]),.req-dlg .rf-group:has([data-locked]){cursor:not-allowed}
+.req-ok{position:absolute;top:50%;right:10px;display:grid;place-items:center;width:22px;height:22px;transform:translateY(-50%);border-radius:50%;background:#fff;color:#1b6b3a;pointer-events:none}
+.req-ok[hidden]{display:none}
+.req-ok svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html.dark .req-ok{background:#1b2923;color:#6fd39b}
+html.dark .req-dlg [data-locked]{background:#17231d;color:#8fa497;border-color:#2e443a}
+.req-dlg select[data-locked]{-webkit-appearance:none;appearance:none;background-image:none}
+.req-dlg select[data-locked]:invalid{color:#a3aea8}
+.req-dlg input::placeholder{color:#a3aea8;opacity:1}
+.req-dlg input.invalid::placeholder{color:#d92d20;opacity:1;font-weight:600}
+.req-resend-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:500;color:#5b6b63;text-transform:none;letter-spacing:0}
+.req-resend-btn{padding:7px 14px;border:1.5px solid #0b4a36;border-radius:9px;background:transparent;color:#0b4a36;font:600 13px Inter,sans-serif;text-transform:none;letter-spacing:0;cursor:pointer;width:auto;min-height:0;height:auto;box-shadow:none}
+.req-resend-btn:hover:not(:disabled){background:rgba(11,74,54,.08)}
+.req-resend-btn:disabled{opacity:.55;cursor:default}
+html.dark .req-resend-row{color:#9fb3a8}html.dark .req-resend-btn{border-color:#7fd1ae;color:#7fd1ae}
+/* Pop-up notification at the bottom (same look as the toasts inside the student portal). It is a popover so it shows above the open dialog. */
+.req-toast{position:fixed;inset:auto 20px 20px auto;margin:0;padding:12px 16px;border:0;border-radius:10px;width:min(380px,calc(100vw - 40px));background:#1d6b3c;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);font:400 14px/1.35 Inter,sans-serif;display:flex;gap:10px;align-items:flex-start;overflow:visible;animation:reqToastIn .25s ease}
+.req-toast:not(:popover-open){display:none}
+.req-toast svg{flex:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.req-toast .rt-text{flex:1;display:grid;gap:2px}
+.req-toast .rt-text strong{font-size:14px}
+.req-toast .rt-close{flex:none;border:0;background:none;color:inherit;opacity:.8;font-size:20px;line-height:1;cursor:pointer;padding:0;width:auto;min-height:0;height:auto;box-shadow:none}
+.req-toast .rt-close:hover{opacity:1}
+.req-toast.out{opacity:0;transition:opacity .3s}
+@keyframes reqToastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@media(max-width:600px){.req-toast{inset:auto 12px 12px 12px;width:auto}}
+html.dark .req-toast{background:#1e7b45}</style>
+<dialog id="reqDlg" class="req-dlg" aria-labelledby="reqDlgTitle">
+  <button class="x dx" id="reqX" type="button" aria-label="Close">×</button>
+  <div class="dh"><i class="hic"><svg class="ic"><use href="#i-fileplus"/></svg></i><div><h3 id="reqDlgTitle">Request a Document</h3><p class="req-doc-name" id="reqDocName"></p></div></div>
+  <form id="reqForm" novalidate>
+    <input type="hidden" id="rfStatus" name="student_status" value="">
+    <div class="rf-choose" id="rfChoose">
+      <button type="button" class="rf-choice" data-status="currently_enrolled">Currently Enrolled</button>
+      <span class="rf-or">or</span>
+      <button type="button" class="rf-choice" data-status="alumni">Alumni</button>
+    </div>
+    <div class="rf-group" id="rfCommon" hidden>
+    <div class="req-field" id="rfIdWrap" data-mode="currently_enrolled">
+      <div class="req-label-row"><label for="rfId">Student ID</label></div>
+      <div class="req-input-wrap">
+        <input id="rfId" name="student_id" type="text" inputmode="numeric" pattern="[0-9\-]*" autocomplete="off" placeholder="e.g. 2026-10001" required>
+        <button class="req-notice-toggle" id="rfIdNoticeToggle" type="button" aria-label="Show Student ID notice" aria-expanded="false" aria-controls="rfIdNotice" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6h.01"/></svg></button>
+        <span class="req-ok" id="rfIdOk" role="img" aria-label="Student ID found" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="m6.5 10.5 2.5 2.5 4.5-5.5"/></svg></span>
+        <span class="req-notice" id="rfIdNotice" role="alert" aria-live="polite" hidden></span>
+      </div>
+    </div>
+    <div class="req-row" id="rfNameRow">
+      <div class="req-field"><div class="req-label-row"><label for="rfFirst">First Name</label></div>
+        <div class="req-input-wrap">
+          <input id="rfFirst" name="first_name" type="text" autocomplete="given-name" placeholder="First name" required>
+          <button class="req-notice-toggle" id="rfFirstNoticeToggle" type="button" aria-label="Show First Name notice" aria-expanded="false" aria-controls="rfFirstNotice" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6h.01"/></svg></button>
+          <span class="req-notice" id="rfFirstNotice" role="alert" aria-live="polite" hidden></span>
+        </div>
+      </div>
+      <div class="req-field"><div class="req-label-row"><label for="rfLast">Last Name</label></div>
+        <div class="req-input-wrap">
+          <input id="rfLast" name="last_name" type="text" autocomplete="family-name" placeholder="Last name" required>
+          <button class="req-notice-toggle" id="rfLastNoticeToggle" type="button" aria-label="Show Last Name notice" aria-expanded="false" aria-controls="rfLastNotice" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6h.01"/></svg></button>
+          <span class="req-notice" id="rfLastNotice" role="alert" aria-live="polite" hidden></span>
+        </div>
+      </div>
+    </div>
+    <label for="rfCourse" id="rfCourseLabel">Course</label>
+    <div class="req-input-wrap" id="rfCourseWrap">
+      <select id="rfCourse" name="course" required>
+        <option value="">Select course</option>
+        <option>BSTM - Tourism Management</option><option>BSA - Accountancy</option><option>BS AIS - Accounting Information System</option><option>BSBA FM - Financial Management</option><option>BSBA MM - Marketing Management</option><option>BSEntrep - Entrepreneurship</option><option>BSIT - Information Technology</option><option>BSCS - Computer Science</option><option>BSCRIM - Criminology</option><option>BSHM - Hospitality Management</option><option>BTVTE - Food and Service Management</option><option>BTVTE - Home Economics</option><option>BTVTE - Animal and Crop Science</option><option>BTLE - Home Economics</option><option>BTLE - Agri-Fishery</option><option>BSRT - Radiologic Technology</option>
+      </select>
+      <button class="req-notice-toggle" id="rfCourseNoticeToggle" type="button" aria-label="Show Course notice" aria-expanded="false" aria-controls="rfCourseNotice" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6h.01"/></svg></button>
+      <span class="req-notice" id="rfCourseNotice" role="alert" aria-live="polite" hidden></span>
+    </div>
+    <div class="rf-group" id="rfYearGroup" data-mode="currently_enrolled">
+      <label for="rfYear">Year Level</label>
+      <select id="rfYear" name="year_level" required disabled>
+        <option value="">Select course first</option>
+      </select>
+    </div>
+    <div class="rf-group" id="rfAYGroup" data-mode="alumni" hidden>
+      <label for="rfAY">Academic Year Graduated</label>
+      <select id="rfAY" name="academic_year" required disabled>
+        <option value="">Select academic year</option>
+      </select>
+    </div>
+    <label for="rfEmail">Email Address</label>
+    <input id="rfEmail" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+    </div>
+    <p class="req-error" id="reqError" aria-live="polite"></p>
+    <div class="req-actions" id="rfActions" hidden><button type="submit" class="btn fill">Continue</button></div>
+  </form>
+</dialog>
+
+<dialog id="requestCancelConfirm" class="request-cancel-confirm" aria-labelledby="requestCancelConfirmTitle">
+  <div class="request-cancel-confirm-icon" aria-hidden="true">!</div>
+  <h3 id="requestCancelConfirmTitle">Are you sure you want to cancel?</h3>
+  <p>Your request details will be discarded.</p>
+  <div class="request-cancel-confirm-actions">
+    <button class="btn" type="button" id="keepRequest">Continue request</button>
+    <button class="btn fill" type="button" id="confirmCancelRequest">Yes, cancel</button>
+  </div>
+</dialog>
+
+<dialog id="dlg"><button class="x dx" id="dX" type="button" aria-label="Back to documents">×</button><div class="dh"><i class="hic"><svg class="ic"><use id="dU" href="#i-file"/></svg></i><h3 id="dT"></h3></div><p id="dD"></p><ul id="dR"></ul>
+  <div class="meta"><span><b>Fee:</b> <span id="dF"></span></span><span><b>Processing:</b> <span id="dP"></span></span></div>
+  <div class="cta"><button type="button" class="btn fill" id="dReq">Request this document</button></div></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// [name, description, requirements, fee, processing, icon, release methods]  (fees and days follow database/install.sql)
+const SCH="Same business day";
+const SOFT=["Softcopy","Hardcopy"],HARD=["Hardcopy"];
+const D=[
+["Transcript of Records (TOR)","Official consolidated academic transcript covering all course units, grades, and graduation credentials.",["Accomplished request form"],"₱250","5–7 working days","file",HARD],
+["Certificate of Enrollment (COE)","Formal verification confirming active student status in the current semester.",["No additional requirements"],"₱100",SCH,"cap",HARD],
+["Certificate of Good Moral Character","Attestation from the Office of Student Affairs and Registrar regarding discipline record.",["No additional requirements"],"₱100",SCH,"shield",HARD],
+["Certification of Grades (COG)","Official certificate with the semester breakdown of subjects taken and grades obtained.",["No additional requirements"],"₱100",SCH,"file",SOFT],
+["Certificate of No Pending Requirement","Certifies completion of all coursework, prerequisites, and thesis/internship requirements.",["No additional requirements"],"₱100",SCH,"idcard",HARD],
+["Certificate of Registration (COR)","Certified copy of the official enrollment registration and scheduled course matrix.",["No additional requirements"],"₱100",SCH,"clip",SOFT],
+["Certificate of Graduation","Official attestation confirming the degree earned and graduation date.",["No additional requirements"],"₱100",SCH,"award",HARD],
+["Certificate of Units Earned","Statement indicating total credited collegiate units completed to date.",["No additional requirements"],"₱100",SCH,"book",HARD],
+["Certificate of General Weighted Average (GWA)","Certification of overall cumulative grade point average across all completed semesters.",["No additional requirements"],"₱100","1–3 working days","chart",HARD],
+["Honorable Dismissal","Official document permitting a student to transfer out and enroll in another collegiate institution.",["Accomplished request form"],"₱350",SCH,"exit",HARD],
+["Certified True Copy of Academic Record","Registrar seal and dry stamp verifying the authenticity of submitted photocopies of records.",["Record to be certified, or a signed request form"],"₱50",SCH,"copy",HARD],
+["Internship/Training Certification","Formal certification of completed on-the-job training (OJT) or practicum hours.",["No additional requirements"],"₱100",SCH,"brief",HARD],
+["NSTP/CWTS-related Certification","Official certificate and serial number for completed National Service Training Program.",["No additional requirements"],"₱100",SCH,"flag",HARD],
+["Other Certifications","Custom registrar certification for special academic or administrative situations.",["No additional requirements"],"₱100",SCH,"more",HARD],
+["Diploma","Official hard-copy diploma. Bring the physical payment receipt when claiming your document.",["Physical payment receipt (when claiming)"],"₱500","5–7 working days","award",HARD]];
+const SVG=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';
+const dlg=document.getElementById("dlg"),allDlg=document.getElementById("allDlg");
+let shownDoc=null;
+function show(d,fromAll){shownDoc=d;dT.textContent=d[0];dD.textContent=d[1];dR.innerHTML="";d[2].forEach(r=>{const l=document.createElement("li");l.textContent=r;dR.appendChild(l)});
+ dF.textContent=d[3];dP.textContent=d[4];dU.setAttribute("href","#i-"+d[5]);dX.onclick=()=>{dlg.close();if(fromAll)openAll()};dlg.showModal()}
+function setNavState(activeText) {
+  const navLinks = [...document.querySelectorAll("header nav a")];
+  navLinks.forEach(link => {
+    const isActive = link.textContent.trim() === activeText;
+    link.classList.toggle("on", isActive);
+    link.classList.toggle("active", isActive);
+  });
+}
+
+// The X button on every navigation page (Request, Track, FAQ): close it and go back to Home.
+function goHome(){
+  closeAll();
+  const home=document.getElementById("home"); if(home) home.scrollIntoView({behavior:"smooth", block:"start"});
+}
+function closeAll(){
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  allDlg.hidden=true; allDlg.classList.remove("is-open");
+  const trackPanel=document.getElementById("track"); if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="";
+  setNavState("Home");
+}
+function closeTrack(){
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  const trackPanel=document.getElementById("track"); if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="";
+  setNavState("Home");
+}
+function openAll(){
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  const trackPanel=document.getElementById("track"); if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  q.value=""; filter();
+  allDlg.hidden=false; allDlg.classList.add("is-open");
+  const main=document.querySelector("main"); if(main) main.style.display="none";
+  setNavState("Request");
+  const target=document.getElementById("allDlg"); if(target){target.scrollIntoView({behavior:"smooth", block:"start"});}
+}
+function openTrack(){
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  const trackPanel=document.getElementById("track");
+  if(trackPanel){trackPanel.hidden=false; trackPanel.classList.add("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="none";
+  const requestPanel=document.getElementById("allDlg"); if(requestPanel){requestPanel.hidden=true; requestPanel.classList.remove("is-open");}
+  setNavState("Upload QR");
+  if(trackPanel){trackPanel.scrollIntoView({behavior:"smooth", block:"start"});}
+}
+
+function closeFaq(){
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="";
+  setNavState("Home");
+}
+function openFaq(){
+  const trackPanel=document.getElementById("track"); if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  const settingsPanel=document.getElementById("settingsPanel"); if(settingsPanel){settingsPanel.hidden=true; settingsPanel.classList.remove("is-open");}
+  const requestPanel=document.getElementById("allDlg"); if(requestPanel){requestPanel.hidden=true; requestPanel.classList.remove("is-open");}
+  const faq=document.getElementById("faqPanel");
+  if(faq){faq.hidden=false; faq.classList.add("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="none";
+  setNavState("FAQ");
+  if(faq){faq.scrollIntoView({behavior:"smooth", block:"start"});}
+}
+function openSettings(){
+  const trackPanel=document.getElementById("track"); if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  const requestPanel=document.getElementById("allDlg"); if(requestPanel){requestPanel.hidden=true; requestPanel.classList.remove("is-open");}
+  const faqPanel=document.getElementById("faqPanel"); if(faqPanel){faqPanel.hidden=true; faqPanel.classList.remove("is-open");}
+  const settings=document.getElementById("settingsPanel");
+  if(settings){settings.hidden=false; settings.classList.add("is-open");}
+  const main=document.querySelector("main"); if(main) main.style.display="none";
+  setNavState("Settings");
+  if(settings){settings.scrollIntoView({behavior:"smooth", block:"start"});}
+}
+
+window.addEventListener("DOMContentLoaded", function(){
+  const trackPanel=document.getElementById("track");
+  if(trackPanel){trackPanel.hidden=true; trackPanel.classList.remove("is-open");}
+  const requestPanel=document.getElementById("allDlg");
+  if(requestPanel){requestPanel.hidden=true; requestPanel.classList.remove("is-open");}
+  const main=document.querySelector("main");
+  if(main) main.style.display="";
+  const faqP=document.getElementById("faqPanel"); if(faqP){faqP.hidden=true; faqP.classList.remove("is-open");}
+  const settingsP=document.getElementById("settingsPanel"); if(settingsP){settingsP.hidden=true; settingsP.classList.remove("is-open");}
+  setNavState("Home");
+  renderTrack(null);
+});
+function card(d,fromAll,sub){const b=document.createElement("button");b.className="doc";b.type="button";
+ b.innerHTML=SVG(d[5])+"<span><b></b>"+(sub?"<small></small>":"")+"</span><i>›</i>";
+ b.querySelector("b").textContent=d[0];if(sub)b.querySelector("small").textContent=d[3]+" · "+d[4];
+ b.onclick=()=>{if(fromAll)closeAll();show(d,fromAll)};return b}
+// home grid: first five documents + "Other School Documents" (opens the full list)
+D.slice(0,5).forEach(d=>docs.appendChild(card(d,false,false)));
+const other=document.createElement("button");other.className="doc";other.type="button";other.innerHTML=SVG("more")+"<span><b>Other School Documents</b></span><i>›</i>";other.onclick=openAll;docs.appendChild(other);
+// "Request a Document" module: every document
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const chk=t=>'<p class="meta-check">'+SVG("check")+" "+esc(t)+"</p>";
+D.forEach((d,i)=>{const c=document.createElement("div");c.className="doc-item";c.dataset.n=d[0].toLowerCase();
+ c.innerHTML='<div class="doc-card"><h3>'+esc(d[0])+'</h3><span class="doc-price">'+esc(d[3])+'</span><p class="doc-desc">'+esc(d[1])+'</p><button type="button" class="doc-request-btn" data-i="'+i+'">Select Document</button></div>'+
+ '<div class="doc-card-meta"><p><strong>Processing Days:</strong> '+esc(d[4])+'</p><p class="meta-label"><strong>Requirements:</strong></p>'+d[2].map(chk).join("")+
+ '<p class="meta-label"><strong>Available Released Method:</strong></p>'+d[6].map(chk).join("")+'</div>';allDocs.appendChild(c)});
+// ---------- Request form (Select Document / Request this document) ----------
+const reqDlg=document.getElementById("reqDlg"),reqForm=document.getElementById("reqForm"),reqError=document.getElementById("reqError");
+const requestCancelConfirm=document.getElementById("requestCancelConfirm");
+let reqDoc=null;
+function openRequestForm(d){
+  reqDoc=d; reqForm.reset(); reqError.textContent=""; setGo("idle"); hideRestoreNote();
+  const oldCode=document.getElementById("rfCodeWrap"); if(oldCode) oldCode.remove();   // the code box must not survive from an earlier document
+  document.getElementById("rfYear").innerHTML='<option value="">Select course first</option>';
+  document.getElementById("rfStatus").value="";   // a hidden field is not cleared by reset()
+  autofilledId="";
+  applyStatus();
+  [...reqForm.elements].forEach(el=>el.classList&&el.classList.remove("invalid"));
+  clearIdNotice();
+  document.getElementById("reqDocName").textContent=d[0]+" · "+d[3];
+  if(dlg.open) dlg.close();
+  reqDlg.showModal();
+  document.getElementById("rfFirst").focus();
+  saveStep1();                                   // the open form is remembered, so a refresh brings it back
+}
+
+const YEAR_OPTIONS=["First Year","Second Year","Third Year","Fourth Year"];
+// Academic Year Graduated: only the last 10 finished academic years (the school year starts in June).
+(function(){
+  const now = new Date();
+  const lastGraduateYear = now.getMonth() >= 5 ? now.getFullYear() - 1 : now.getFullYear() - 2;
+  const firstGraduateYear = lastGraduateYear - 9;
+  let h='<option value="">Select academic year</option>';
+  for(let y = lastGraduateYear; y >= firstGraduateYear; y--) h += "<option>" + y + "-" + (y + 1) + "</option>";
+  document.getElementById("rfAY").innerHTML = h;
+})();
+// Currently Enrolled: First/Last Name, Student ID, Course, Year Level, Email.  Alumni: Name, Course, Academic Year Graduated, Email.
+function syncYear(){
+  const yr=document.getElementById("rfYear"),has=!!document.getElementById("rfCourse").value;
+  const enrolled=document.getElementById("rfStatus").value==="currently_enrolled";
+  const keep=yr.value;
+  yr.innerHTML='<option value="">'+(enrolled?"Year level":(has?"Select year level":"Select course first"))+'</option>'+(has?YEAR_OPTIONS.map(y=>"<option>"+y+"</option>").join(""):"");
+  if(has&&YEAR_OPTIONS.includes(keep)) yr.value=keep;
+  yr.disabled=!enrolled;
+}
+function applyStatus(){
+  const st=document.getElementById("rfStatus").value;
+  document.getElementById("rfCommon").hidden=!st;
+  document.getElementById("rfChoose").hidden=!!st;
+  document.getElementById("rfActions").hidden=!st;
+  document.getElementById("reqError").hidden=!st;
+  document.querySelectorAll("#rfCommon [data-mode]").forEach(g=>{
+    const on=g.dataset.mode===st;
+    g.hidden=!on;
+    g.querySelectorAll("input,select").forEach(el=>{el.disabled=!on;if(!on){el.value="";el.classList.remove("invalid");}});
+  });
+  // Currently Enrolled: the details below stay on screen, locked, and are filled in once a Student ID on the record is typed.
+  const locked=st==="currently_enrolled";
+  [["rfFirst","First name"],["rfLast","Last name"],["rfCourse","Course"],["rfYear","Year level"]].forEach(([i,t])=>document.getElementById(i).setAttribute("aria-label",t));
+  document.getElementById("rfFirst").placeholder="First name";
+  document.getElementById("rfLast").placeholder="Last name";
+  document.getElementById("rfCourse").options[0].textContent=locked?"Course":"Select course";
+  ["rfFirst","rfLast","rfCourse","rfYear"].forEach(i=>{const el=document.getElementById(i);if(locked)el.setAttribute("data-locked","");else el.removeAttribute("data-locked");el.readOnly=locked;el.tabIndex=locked?-1:0;});
+  syncYear();
+  clearIdNotice();
+  if(st==="currently_enrolled") checkOnRecord();
+}
+// Locked details (First/Last Name, Course, Year Level): cannot be clicked, focused, tabbed into or changed. Only the Student ID fills them in.
+["rfFirst","rfLast","rfCourse","rfYear"].forEach(i=>{
+  const el=document.getElementById(i),locked=()=>el.hasAttribute("data-locked");
+  el.addEventListener("focus",()=>{if(locked()) el.blur();});
+  el.addEventListener("mousedown",e=>{if(locked()) e.preventDefault();});
+  el.addEventListener("keydown",e=>{if(locked()) e.preventDefault();});
+  document.querySelectorAll('label[for="'+i+'"]').forEach(l=>l.addEventListener("click",e=>{if(locked()) e.preventDefault();}));
+});
+document.querySelectorAll(".rf-choice").forEach(b=>b.addEventListener("click",()=>{
+  document.getElementById("rfStatus").value=b.dataset.status;
+  applyStatus();
+  document.getElementById(b.dataset.status==="currently_enrolled"?"rfId":"rfFirst").focus();   // enrolled: only the Student ID is typed
+}));
+document.getElementById("rfCourse").addEventListener("change",()=>{syncYear();checkOnRecord();});
+// Student ID: numbers only (a dash is allowed because the school IDs look like 2026-10001)
+// Nothing is erased or flagged while the ID is being typed. When the typing pauses (or Enter is pressed) the ID is checked:
+// the name, course and year level fill in by themselves, or the error notice shows when the ID is wrong.
+document.getElementById("rfId").addEventListener("input",e=>{e.target.value=e.target.value.replace(/[^0-9-]/g,"");autofillFromId();});
+["change","paste","blur"].forEach(ev=>document.getElementById("rfId").addEventListener(ev,()=>setTimeout(()=>{const el=document.getElementById("rfId");el.value=el.value.replace(/[^0-9-]/g,"");},0)));
+document.getElementById("rfId").addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return;
+  e.preventDefault();                                   // Enter checks the ID; it does not submit the form
+  autofillFromId(true);
+});
+// Once a Student ID on the school record is typed, the name, course and year level appear automatically (read-only card).
+let autofillTimer=null,autofillSeq=0,autofilledId="";
+// Smooth feedback: filled fields fade/slide in one after another; a wrong ID gives the box a short shake.
+function animateOnce(el,cls,delay){
+  el.classList.remove(cls);void el.offsetWidth;                       // restart the animation if it is already running
+  el.style.animationDelay=delay?delay+"ms":"";
+  el.classList.add(cls);
+  el.addEventListener("animationend",()=>{el.classList.remove(cls);el.style.animationDelay="";},{once:true});
+}
+function clearAutofill(){
+  autofilledId="";setIdOk(false);
+  ["rfFirst","rfLast","rfCourse"].forEach(i=>{document.getElementById(i).value="";});
+  syncYear();
+}
+function autofillFromId(enter){
+  clearTimeout(autofillTimer);
+  const idEl=document.getElementById("rfId"),id=idEl.value.trim();
+  if(document.getElementById("rfStatus").value!=="currently_enrolled") return;
+  if(id===autofilledId){ if(enter===true&&id) document.getElementById("rfEmail").focus(); return; }   // already loaded: just go on to the email
+  if(autofilledId) clearAutofill();             // the ID was changed: the old person's details must go
+  setIdOk(false);
+  showNotice("rfIdNotice","");idEl.classList.remove("invalid");
+  idEl.placeholder="e.g. 2026-10001";
+  if(enter!==true&&enter!=="auto"){             // typing: nothing is erased; once the typing pauses the ID is looked up by itself
+    if(id.length>=5) autofillTimer=setTimeout(()=>autofillFromId("auto"),700);
+    return;
+  }
+  if(id.length<5){
+    idEl.classList.add("invalid");
+    showNotice("rfIdNotice","Please enter your complete Student ID (for example 2026-10001).");
+    return;
+  }
+  const seq=++autofillSeq;
+  fetch("../api/check_students.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({student_id:id,lookup:true})})
+    .then(r=>r.json().catch(()=>null))
+    .then(d=>{
+      if(seq!==autofillSeq||!d||idEl.value.trim()!==id) return;
+      if(d.ok===false){                                  // e.g. too many checks from this address
+        showNotice("rfIdNotice",d.error||"We could not check this Student ID right now. Please try again.");
+        idEl.classList.add("invalid");return;
+      }
+      const p=d.profile;
+      if(!p){
+        // Wrong ID (shown only after Enter): the box is emptied and the placeholder turns red, so nothing wrong stays in the form.
+        if(enter!=="auto") idEl.value="";            // while typing automatically, the typed digits stay so they can be corrected
+        idEl.placeholder="This ID is not existed";idEl.classList.add("invalid");animateOnce(idEl,"rf-shake");
+        showNotice("rfIdNotice",ID_WRONG_NOTICE);        // red notice icon beside the box
+        return;
+      }
+      autofilledId=id;
+      showNotice("rfIdNotice","");setIdOk(true);         // green check beside the box
+      document.getElementById("rfFirst").value=p.first_name||"";
+      document.getElementById("rfLast").value=p.last_name||"";
+      const course=document.getElementById("rfCourse");
+      course.value=[...course.options].some(o=>o.value===p.course)?p.course:"";
+      syncYear();
+      const yr=document.getElementById("rfYear");
+      if(p.year_level&&[...yr.options].some(o=>o.value===p.year_level)) yr.value=p.year_level;
+      ["rfFirst","rfLast","rfCourse","rfYear"].forEach((id,i)=>animateOnce(document.getElementById(id),"rf-filled",i*90));
+      [...reqForm.elements].forEach(el=>el.classList&&el.classList.remove("invalid"));
+      saveStep1();                                       // the filled-in name, course and year level are remembered too
+      scheduleAutomaticOtp();
+      if(enter!=="auto") document.getElementById("rfEmail").focus();
+    }).catch(()=>{});
+}
+// Live check: the name is verified as soon as First and Last Name are typed; the Student ID is checked together with the name.
+let idTimer=null,idSeq=0,noticeTimers={};
+function setIdOk(on){const ok=document.getElementById("rfIdOk");if(ok) ok.hidden=!on;}   // green check beside the Student ID
+const ID_WRONG_NOTICE="This Student ID does not exist in the school records. Please check it.";
+function showNotice(id,text){
+  if(id==="rfIdNotice"&&text) setIdOk(false);
+  const notice=document.getElementById(id),toggle=document.getElementById(id+"Toggle");
+  clearTimeout(noticeTimers[id]);
+  notice.textContent=text||"";
+  notice.hidden=true;
+  toggle.hidden=!text;
+  toggle.setAttribute("aria-expanded","false");
+  if(text) noticeTimers[id]=setTimeout(()=>{
+    notice.hidden=true;
+    toggle.setAttribute("aria-expanded","false");
+  },30000);
+}
+document.querySelectorAll(".req-notice-toggle").forEach(toggle=>toggle.addEventListener("click",()=>{
+  const notice=document.getElementById(toggle.getAttribute("aria-controls"));
+  const expanded=toggle.getAttribute("aria-expanded")==="true";
+  notice.hidden=expanded;
+  toggle.setAttribute("aria-expanded",String(!expanded));
+}));
+function clearIdNotice(){setIdOk(false);++idSeq;showNotice("rfIdNotice","");showNotice("rfFirstNotice","");showNotice("rfLastNotice","");showNotice("rfCourseNotice","");["rfFirst","rfLast","rfId","rfCourse"].forEach(i=>document.getElementById(i).classList.remove("invalid"));}
+function checkOnRecord(immediate=false){
+  clearTimeout(idTimer);
+  // Alumni are not checked against the current student list.
+  if(document.getElementById("rfStatus").value!=="currently_enrolled"){clearIdNotice();return Promise.resolve(false);}
+  const first=document.getElementById("rfFirst").value.trim(),last=document.getElementById("rfLast").value.trim();
+  const idEl=document.getElementById("rfId"),id=idEl.disabled?"":idEl.value.trim();
+  const course=document.getElementById("rfCourse").value;
+  if(!first){clearIdNotice();return Promise.resolve(false);}
+  const seq=++idSeq;
+  const check=()=>fetch("../api/check_students.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({first_name:first,last_name:last,student_id:id,course})})
+      .then(r=>r.json().catch(()=>null))
+      .then(d=>{
+        if(seq!==idSeq||!d||d.ok===false) return false; // Ignore an older answer; the server also checks on Continue.
+        let firstBad=!d.first_name_found,lastBad=!!last&&!d.last_name_found;
+        if(last&&!d.name_found&&!firstBad&&!lastBad){
+          firstBad=true;lastBad=true;
+        }
+        const idBad=d.name_found&&!!id&&!d.found;
+        const courseBad=d.course_matches===false;
+        showNotice("rfFirstNotice",firstBad?"This First Name does not match the school records. Please check the spelling.":"");
+        showNotice("rfLastNotice",lastBad?"This Last Name does not match the school records. Please check the spelling.":"");
+        showNotice("rfIdNotice",idBad?"This Student ID does not belong to that name. Please check it.":"");
+        showNotice("rfCourseNotice",courseBad?"This course does not match the school records. Please select your recorded course.":"");
+        document.getElementById("rfFirst").classList.toggle("invalid",firstBad);document.getElementById("rfLast").classList.toggle("invalid",lastBad);
+        idEl.classList.toggle("invalid",idBad);
+        document.getElementById("rfCourse").classList.toggle("invalid",courseBad);
+        return true;
+      }).catch(()=>false);
+  if(immediate===true) return check();
+  idTimer=setTimeout(check,250);
+}
+document.getElementById("rfFirst").addEventListener("input",checkOnRecord);
+["rfLast","rfId"].forEach(i=>document.getElementById(i).addEventListener("input",checkOnRecord));
+function cancelRequestForm(){
+  const keepRequest=document.getElementById("keepRequest");
+  const confirmCancel=document.getElementById("confirmCancelRequest");
+  return new Promise(resolve=>{
+    requestCancelConfirm.addEventListener("close",()=>resolve(requestCancelConfirm.returnValue==="confirm"),{once:true});
+    keepRequest.onclick=()=>requestCancelConfirm.close("keep");
+    confirmCancel.onclick=()=>requestCancelConfirm.close("confirm");
+    requestCancelConfirm.showModal();
+    keepRequest.focus();
+  }).then(confirmed=>{
+    if(!confirmed) return;
+    clearRequestDraft();
+    reqDlg.close();
+  });
+}
+function clearRequestDraft(){
+  try{
+    sessionStorage.removeItem("colmRequestDraft");
+    sessionStorage.removeItem("colmRequestRows");
+    sessionStorage.removeItem("colmRequestForm");
+    sessionStorage.removeItem("colmRequestStep1");
+  }catch(err){}
+}
+let autoOtpTimer=null;
+function scheduleAutomaticOtp(delay=700){
+  clearTimeout(autoOtpTimer);
+  autoOtpTimer=setTimeout(()=>{
+    const email=document.getElementById("rfEmail");
+    if(!reqDlg.open||document.getElementById("rfCodeWrap")||goBtn.dataset.state==="checking"||goBtn.dataset.state==="ok") return;
+    if(!email.value.trim()||!email.checkValidity()||!reqForm.checkValidity()) return;
+    if(document.getElementById("rfStatus").value==="currently_enrolled"
+      &&autofilledId!==document.getElementById("rfId").value.trim()) return;
+    reqForm.requestSubmit();
+  },delay);
+}
+document.getElementById("reqX").onclick=cancelRequestForm;
+document.getElementById("dReq").onclick=()=>{ if(shownDoc) openRequestForm(shownDoc); };
+allDocs.addEventListener("click",e=>{const b=e.target.closest(".doc-request-btn"); if(b) openRequestForm(D[+b.dataset.i]);});
+reqForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  const f=Object.fromEntries(new FormData(reqForm).entries());
+  Object.keys(f).forEach(k=>f[k]=String(f[k]).trim());
+  if(f.student_status==="currently_enrolled"&&(!f.student_id||autofilledId!==f.student_id)){
+    const idEl=document.getElementById("rfId");
+    // Nothing typed yet: no notice and no red box, the cursor just goes to the Student ID.
+    if(!f.student_id){reqError.textContent="";idEl.classList.remove("invalid");idEl.focus();return;}
+    // An ID was typed but its details are not shown yet: ask the database. Not on record -> "This ID is not existed".
+    reqError.textContent="";
+    fetch("../api/check_students.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({student_id:f.student_id,lookup:true})})
+      .then(r=>r.json().catch(()=>null))
+      .then(d=>{
+        if(!d||d.ok===false){reqError.textContent=(d&&d.error)||"We could not check this Student ID right now. Please try again.";return;}
+        if(!d.profile){
+          idEl.value="";idEl.placeholder="This ID is not existed";
+          idEl.classList.add("invalid");animateOnce(idEl,"rf-shake");showNotice("rfIdNotice",ID_WRONG_NOTICE);idEl.focus();return;
+        }
+        idEl.classList.remove("invalid");
+        autofillFromId(true);                              // the ID exists: fill in the details, then Continue can be pressed
+        reqError.textContent="Your details are now filled in. Please press Continue again.";
+      }).catch(()=>{reqError.textContent="Cannot reach the server. Check your connection and try again.";});
+    return;
+  }
+  // Verification code step: the code must be the full 6 digits before it is sent to the server.
+  const codeEl=document.getElementById("rfCode");
+  if(codeEl){
+    const digits=codeEl.value.replace(/\D/g,"");
+    if(digits.length!==6){
+      codeEl.classList.add("invalid");animateOnce(codeEl,"rf-shake");
+      reqError.textContent=digits.length?"The code is incomplete. Please enter all 6 digits ("+digits.length+" of 6 entered).":"Please enter the 6-digit code we sent to your email.";
+      codeEl.focus();return;
+    }
+  }
+  let bad=null;
+  [...reqForm.elements].filter(el=>el.name&&!el.disabled).forEach(el=>{
+    const empty=!f[el.name]; const mail=el.name==="email"&&f.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email);
+    el.classList.toggle("invalid",empty||mail); if((empty||mail)&&!bad) bad=el;
+  });
+  if(bad){reqError.textContent=bad.name==="email"&&f.email?"Please enter a valid email address.":"Please fill out all fields.";bad.focus();return;}
+  reqError.textContent="";
+  setGo("checking");
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),20000);
+  fetch("../api/guest_start.php",{method:"POST",credentials:"same-origin",signal:ctl.signal,headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(f)})
+    .then(r=>r.json().catch(()=>null).then(d=>({r,d,ok:r.ok&&d&&d.ok!==false})))
+    .then(({r,d,ok})=>{
+      clearTimeout(timer);
+      if(!ok){
+        if(r.status===404){
+          checkOnRecord(true).then(updated=>{
+            fail(updated?"Please correct the highlighted information above.":(d&&d.error)||"The server sent an unexpected reply (HTTP "+r.status+"). Please try again.");
+          });
+          return;
+        }
+        if(d&&d.error==="The selected course does not match the school records."){
+          showNotice("rfCourseNotice","This course does not match the school records. Please select your recorded course.");
+          document.getElementById("rfCourse").classList.add("invalid");
+        }
+        // A code that expired, was used up or was typed wrong too often cannot be retried: go back to Continue, which sends a fresh one.
+        if(document.getElementById("rfCodeWrap")&&/expired|already used|Too many wrong codes/i.test((d&&d.error)||"")){
+          document.getElementById("rfCodeWrap").remove();setGo("idle");reqError.textContent=d.error;return;
+        }
+        if(document.getElementById("rfCode")&&/not correct/i.test((d&&d.error)||"")){
+          const ce=document.getElementById("rfCode");
+          reqError.textContent="Wrong OTP. Please check the code in your email and try again.";
+          setGo("idle");ce.value="";ce.classList.add("invalid");animateOnce(ce,"rf-shake");ce.focus();return;
+        }
+        fail((d&&d.error)||"The server sent an unexpected reply (HTTP "+r.status+"). Please try again.");return;
+      }
+      if(d.otp_required){showCodeStep(d.message,d.retry_after);return;}
+      setGo("ok");
+      // The next step (the request wizard) opens with this document already chosen.
+      // Kept until the request is submitted or cancelled, so a page refresh brings the request back (see resumeRequest below).
+      try{sessionStorage.setItem("colmRequestDraft",JSON.stringify({document:reqDoc[0]}));}catch(err){}
+      clearStep1();                                 // from here the wizard keeps its own draft
+      setTimeout(showNextStepOverlay,400);          // the next step opens right here, on top of this page
+    })
+    .catch(err=>{
+      clearTimeout(timer);
+      fail(err&&err.name==="AbortError"?"The server is taking too long to answer. Check that Apache and MySQL are running, then try again.":"Cannot reach the server. Check your connection and try again.");
+    });
+});
+
+// Step 2 of the email check: a code box appears under the form. The same Continue button then sends the code.
+function showCodeStep(message,wait){
+  let box=document.getElementById("rfCodeWrap");
+  if(!box){
+    box=document.createElement("label");box.id="rfCodeWrap";box.className="req-field";
+    box.innerHTML='Verification code (check your email)<input name="code" id="rfCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code"><span class="req-resend-row"><span>Didn\'t receive code?</span><button type="button" class="req-resend-btn" id="rfResend">Resend Code</button></span>';
+    reqForm.insertBefore(box,goBtn.parentElement===reqForm?goBtn:goBtn.parentElement);
+    document.getElementById("rfResend").addEventListener("click",resendCode);
+    document.getElementById("rfCode").addEventListener("blur",event=>{
+      const length=event.target.value.replace(/\D/g,"").length;
+      if(length>0&&length<6) reqError.textContent=`OTP is incomplete. Enter all 6 digits (${length} of 6).`;
+    });
+  }
+  document.getElementById("rfCode").value="";
+  document.getElementById("rfCode").focus();
+  reqError.textContent=message;
+  setGo("idle");
+  startResendWait(wait);
+}
+// "Resend code" looks like a link. A code lasts 1 minute, so a new one can be asked for only after that (the server says how long is left).
+let resendTimer=null;
+function startResendWait(seconds){
+  clearInterval(resendTimer);
+  const btn=document.getElementById("rfResend");if(!btn) return;
+  // A code lasts 1 minute: the button counts down 59, 58 ... 0 seconds, then the code is expired and a new one can be asked for.
+  let left=Math.max(1,Math.min(60,Math.ceil(+seconds||60))-1);const fmt=n=>n+"s";btn.disabled=true;btn.textContent="Resend Code in "+fmt(left);
+  resendTimer=setInterval(()=>{
+    const b=document.getElementById("rfResend");
+    if(!b){clearInterval(resendTimer);return;}
+    if(--left<=0){
+      // The minute is over: the code no longer works, so it is cleared and a new one can be asked for.
+      clearInterval(resendTimer);b.disabled=false;b.textContent="Resend Code";
+      const c=document.getElementById("rfCode");if(c) c.value="";
+      if(c){c.classList.add("invalid");animateOnce(c,"rf-shake");}
+      reqError.textContent="This code has expired. Click Resend Code to get a new one.";
+    }
+    else b.textContent="Resend Code in "+fmt(left);
+  },1000);
+}
+// The code is checked by itself as soon as 6 digits are in: no Verify button.
+document.addEventListener("input",e=>{
+  if(!e.target||e.target.id!=="rfCode") return;
+  e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);
+  e.target.classList.remove("invalid");
+  if(goBtn.dataset.state==="error"){setGo("idle");}
+  if(!/expired/i.test(reqError.textContent)) reqError.textContent="";
+  if(e.target.value.length===6&&goBtn.dataset.state!=="checking"&&goBtn.dataset.state!=="ok"){
+    e.target.blur();
+    reqError.textContent="Verifying...";
+    reqForm.requestSubmit();
+  } else if(e.target.value.length>0&&e.target.value.length<6) {
+    reqError.textContent=`OTP is incomplete. Enter all 6 digits (${e.target.value.length} of 6).`;
+  }
+});
+document.getElementById("rfEmail").addEventListener("input",()=>scheduleAutomaticOtp());
+document.getElementById("rfEmail").addEventListener("blur",()=>scheduleAutomaticOtp(0));
+function resendCode(){
+  const btn=document.getElementById("rfResend");if(!btn||btn.disabled) return;
+  const f=Object.fromEntries(new FormData(reqForm).entries());
+  Object.keys(f).forEach(k=>f[k]=String(f[k]).trim());
+  delete f.code;                                  // no code = the server sends a new one (the old one stops working)
+  btn.disabled=true;btn.textContent="Sending...";
+  fetch("../api/guest_start.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(f)})
+    .then(r=>r.json().catch(()=>null).then(d=>({r,d})))
+    .then(({r,d})=>{
+      if(!document.getElementById("rfResend")) return;
+      if(r.ok&&d&&d.otp_required){
+        if(!d.already_sent) document.getElementById("rfCode").value="";
+        reqError.textContent=d.already_sent?d.message:"A new code was sent to "+f.email+". Enter it below to continue.";
+        startResendWait(d.retry_after);
+      }else{
+        reqError.textContent=(d&&d.error)||"We could not send a new code. Please try again.";
+        btn.disabled=false;btn.textContent="Resend Code";
+      }
+    })
+    .catch(()=>{btn.disabled=false;btn.textContent="Resend Code";reqError.textContent="Cannot reach the server. Check your connection and try again.";});
+}
+
+// The email (or any other detail) can still be changed after the code was sent: the old code is dropped and Continue sends a new one.
+reqForm.addEventListener("input",e=>{
+  if(e.target.id==="rfCode") return;
+  const box=document.getElementById("rfCodeWrap");
+  if(box){box.remove();setGo("idle");reqError.textContent="";}
+});
+
+// The Continue button shows where the check is: Continue -> Verifying... -> Verified (or Try again when something is wrong).
+const goBtn=reqForm.querySelector('button[type="submit"]');
+const GO_TEXT={idle:"Continue",checking:'<span class="req-spin" aria-hidden="true"></span>Verifying...',ok:"Verified \u2713",error:"Try again"};
+function setGo(state){
+  goBtn.dataset.state=state;
+  goBtn.disabled=state==="checking"||state==="ok";
+  goBtn.innerHTML=GO_TEXT[state];
+  goBtn.style.display=document.getElementById("rfCodeWrap")?"none":"";
+}
+function fail(message){reqError.textContent=message;setGo("error");}
+// Changing any field after an error puts the button back to Continue.
+reqForm.addEventListener("input",e=>{if(goBtn.dataset.state==="error"&&!(e.target&&e.target.id==="rfCode")){setGo("idle");reqError.textContent="";}});
+reqForm.addEventListener("change",()=>{if(goBtn.dataset.state==="error"){setGo("idle");reqError.textContent="";}});
+
+// ===== Auto-restore of the first form (Student ID, name, course, year level, email) =====
+// What is typed is kept in sessionStorage while the form is open, so a page refresh brings the same form back with the same details.
+// It is removed when the request is cancelled, the form is closed, or Continue succeeds (the wizard has its own draft after that).
+const STEP1_KEY="colmRequestStep1";
+const STEP1_FIELDS=["rfStatus","rfId","rfFirst","rfLast","rfCourse","rfYear","rfAY","rfEmail"];
+let restoringStep1=false;
+function saveStep1(){
+  if(restoringStep1||!reqDoc||!reqDlg.open||reqDlg.classList.contains("wizard")||goBtn.dataset.state==="ok") return;
+  try{
+    const fields={};
+    STEP1_FIELDS.forEach(id=>{fields[id]=document.getElementById(id).value;});
+    sessionStorage.setItem(STEP1_KEY,JSON.stringify({doc:reqDoc[0],fromAll:!allDlg.hidden,fields}));
+  }catch(err){}
+}
+function clearStep1(){try{sessionStorage.removeItem(STEP1_KEY);}catch(err){}}
+// "Restored automatically" notice: shown for a few seconds after a refresh, hidden again when the form is closed or reopened.
+let restoreNoteTimer=null;
+function hideRestoreNote(){
+  clearTimeout(restoreNoteTimer);
+  const n=document.getElementById("reqToast");
+  if(n){try{n.hidePopover();}catch(err){}n.remove();}
+}
+function showRestoreNote(){
+  hideRestoreNote();
+  const n=document.createElement("div");
+  n.id="reqToast";n.className="req-toast";n.setAttribute("popover","manual");n.setAttribute("role","status");
+  n.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg><div class="rt-text"><strong>Auto-restored</strong><span>Your details were restored after the page refresh.</span></div><button type="button" class="rt-close" aria-label="Close">×</button>';
+  n.querySelector(".rt-close").addEventListener("click",hideRestoreNote);
+  document.body.append(n);
+  try{n.showPopover();}catch(err){reqDlg.append(n);}      // very old browsers: show it inside the dialog instead
+  restoreNoteTimer=setTimeout(()=>{n.classList.add("out");restoreNoteTimer=setTimeout(hideRestoreNote,300);},5000);
+}
+reqForm.addEventListener("input",e=>{if(e.target&&e.target.id!=="rfCode") saveStep1();});
+reqForm.addEventListener("change",saveStep1);
+document.querySelectorAll(".rf-choice").forEach(b=>b.addEventListener("click",saveStep1));   // Currently Enrolled / Alumni
+document.addEventListener("DOMContentLoaded",function(){
+  let s=null;
+  try{s=JSON.parse(sessionStorage.getItem(STEP1_KEY)||"null");}catch(err){}
+  if(!s||!s.doc||!s.fields) return;
+  let wizardDraft=false;
+  try{wizardDraft=!!sessionStorage.getItem("colmRequestDraft");}catch(err){}
+  const d=D.find(x=>x[0]===s.doc);
+  if(wizardDraft||!d||new URLSearchParams(location.search).get("track")){clearStep1();return;}
+  const f=s.fields,set=(id,v)=>{document.getElementById(id).value=v||"";};
+  restoringStep1=true;
+  try{
+    if(s.fromAll) openAll();
+    openRequestForm(d);
+    if(f.rfStatus){
+      set("rfStatus",f.rfStatus); applyStatus();
+      if(f.rfStatus==="currently_enrolled"){
+        set("rfId",f.rfId);
+        set("rfFirst",f.rfFirst);set("rfLast",f.rfLast);   // shown right away; the Student ID is checked again below
+        set("rfCourse",f.rfCourse); syncYear(); set("rfYear",f.rfYear);
+      }else{
+        set("rfFirst",f.rfFirst);set("rfLast",f.rfLast);
+        set("rfCourse",f.rfCourse); syncYear(); set("rfAY",f.rfAY);
+      }
+      set("rfEmail",f.rfEmail);
+    }
+  }finally{restoringStep1=false;}
+  if(f.rfStatus==="currently_enrolled"&&(f.rfId||"").trim().length>=5) autofillFromId("auto");   // confirms the ID and puts back the green check
+  saveStep1();
+  // Only when details were actually typed (Student ID, name, course, year, email). Just having picked Currently Enrolled / Alumni does not count.
+  if(STEP1_FIELDS.some(id=>id!=="rfStatus"&&(f[id]||"").trim())) showRestoreNote();
+});
+let nextFrame=null,nextLoader=null;
+function removeNextStep(){
+  if(nextFrame){nextFrame.remove();nextFrame=null;}
+  if(nextLoader){nextLoader.remove();nextLoader=null;}
+}
+function showNextStepOverlay(){
+  removeNextStep();
+  reqDlg.classList.add("wizard");                // same dialog and backdrop: only its content changes
+  if(!reqDlg.open) reqDlg.showModal();
+  const loader=document.createElement("div");
+  loader.className="next-step-card";
+  loader.innerHTML='<span class="req-spin big" aria-hidden="true"></span><p>Opening your request form...</p>';
+  // The request wizard (student.html) is shown inside the dialog; the address bar stays on index.html.
+  const fr=document.createElement("iframe");
+  fr.className="next-step-frame"; fr.title="Document Request Form"; fr.src="student.html?v=52&landing=1";
+  fr.addEventListener("load",()=>fr.classList.add("ready"));
+  reqDlg.append(loader,fr);
+  nextLoader=loader; nextFrame=fr;
+}
+// Messages from the wizard: it is ready (hide the loader), or it asks to be closed (Cancel / Back to Home).
+window.addEventListener("message",e=>{
+  if(e.origin!==location.origin||!e.data) return;
+  if(e.data.colmReady===true){if(nextLoader){nextLoader.remove();nextLoader=null;}return;}
+  if(e.data.colmDone===true){reqFinished=true;return;}          // request submitted: leaving is no longer a problem
+  if(e.data.colmClose===true&&reqDlg.classList.contains("wizard")){
+    reqDlg.close();
+    // After a submitted request ("Back to Home"): go straight to Track with the tracking number in the search bar.
+    const ref=typeof e.data.track==="string"?e.data.track.trim().slice(0,40):"";
+    if(ref) showTrackWith(ref);
+  }
+});
+function showTrackWith(ref){
+  openTrack();
+  const input=document.getElementById("trackRefInput");
+  if(input){input.value=ref;input.focus();}
+  lookupTrack(ref);                                  // show the status right away (link from the email)
+}
+// Same thing when the wizard was opened on its own and came back with index.html?track=...
+document.addEventListener("DOMContentLoaded",function(){
+  const ref=new URLSearchParams(location.search).get("track");
+  if(ref&&ref.trim()) showTrackWith(ref.trim().slice(0,40));
+});
+// After a refresh: a requester whose email was verified (session still open) and whose request was not finished gets the request form back.
+document.addEventListener("DOMContentLoaded",function(){
+  let draft=null;
+  try{draft=JSON.parse(sessionStorage.getItem("colmRequestDraft")||"null");}catch(err){}
+  if(!draft||!draft.document||new URLSearchParams(location.search).get("track")) return;
+  fetch("../api/me.php",{credentials:"same-origin",headers:{Accept:"application/json"}})
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(d=>{
+      if(d&&d.user&&d.user.role==="student"){showNextStepOverlay();}
+      else{try{sessionStorage.removeItem("colmRequestDraft");sessionStorage.removeItem("colmRequestRows");sessionStorage.removeItem("colmRequestForm");}catch(err){}}
+    });
+});
+// Esc must not throw away a request that is half filled in.
+reqDlg.addEventListener("cancel",e=>{
+  e.preventDefault();
+  if(!reqDlg.classList.contains("wizard")) cancelRequestForm();
+});
+reqDlg.addEventListener("close",()=>{clearStep1();hideRestoreNote();removeNextStep();reqDlg.classList.remove("wizard");setGo("idle");const c=document.getElementById("rfCodeWrap");if(c)c.remove();});
+
+// ===== Leave guard: Back while a request is being filled in =====
+// Refreshes are allowed without a browser warning; the request draft is restored from sessionStorage.
+let reqFinished=false,guardOn=false,ignorePop=false,leaveDlg=null;
+const requestInProgress=()=>reqDlg.open&&!reqFinished;
+new MutationObserver(()=>{
+  if(reqDlg.open&&!guardOn){guardOn=true;reqFinished=false;history.pushState({colmGuard:1},"");}
+}).observe(reqDlg,{attributes:true,attributeFilter:["open"]});
+reqDlg.addEventListener("close",()=>{
+  if(leaveDlg&&leaveDlg.open) leaveDlg.close();
+  if(guardOn){guardOn=false;ignorePop=true;history.back();}     // remove the extra history entry the guard added
+});
+function askLeaveRequest(){
+  if(leaveDlg&&leaveDlg.open) return;
+  leaveDlg=document.createElement("dialog");
+  leaveDlg.className="request-cancel-confirm";
+  leaveDlg.innerHTML='<div class="request-cancel-confirm-icon" aria-hidden="true">!</div><h3>Leave this request?</h3><p>Your request details will be discarded.</p><div class="request-cancel-confirm-actions"><button class="btn leave-keep" type="button">Continue request</button><button class="btn fill leave-go" type="button">Yes, leave</button></div>';
+  document.body.append(leaveDlg);
+  const d=leaveDlg;
+  d.addEventListener("close",()=>d.remove());
+  d.addEventListener("cancel",e=>{e.preventDefault();d.close();});
+  d.querySelector(".leave-keep").onclick=()=>d.close();
+  d.querySelector(".leave-go").onclick=()=>{d.close();clearRequestDraft();reqDlg.close();};
+  d.showModal();
+  d.querySelector(".leave-keep").focus();
+}
+window.addEventListener("popstate",()=>{
+  if(ignorePop){ignorePop=false;return;}
+  if(!guardOn) return;
+  history.pushState({colmGuard:1},"");                            // stay on this page
+  if(reqFinished){clearRequestDraft();reqDlg.close();return;}
+  askLeaveRequest();
+});
+function filter(){const t=q.value.trim().toLowerCase();let n=0;[...allDocs.children].forEach(c=>{const ok=!t||c.dataset.n.includes(t);c.hidden=!ok;if(ok)n++});none.hidden=n>0}
+q.addEventListener("input",filter);
+
+// ---------- Track page ----------
+// No request is loaded by default (empty state). renderTrack(null) = empty, renderTrack({...}) = a real request.
+const TRACK_ICONS={
+  submitted:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>',
+  verification:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  processing:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  ready:'<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>'
+};
+const TRACK_STEPS=[
+  {key:"submitted",    label:"Submitted",         description:"Your request was received by the Registrar."},
+  {key:"verification", label:"Verification",      description:"Your documents are being verified by the Registrar's Office."},
+  {key:"processing",   label:"Processing",        description:"Your request is being processed and prepared."},
+  {key:"ready",        label:"Ready for Release", description:"Your document is ready to be released."}
+];
+const TRACK_PROGRESS={submitted:25,verification:45,processing:72,ready:100};
+const trackEsc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const trackDate=v=>{if(!v)return "";const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString([],{month:"short",day:"numeric"});};
+const trackFullDate=v=>{if(!v)return "";const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString([],{month:"long",day:"numeric",year:"numeric"});};
+
+function renderTrack(req){
+  const timeline=document.getElementById("statusTimeline");
+  const details=document.getElementById("trackDetails");
+  const card=document.getElementById("trackCard");
+  const subtitle=document.getElementById("trackSubtitle");
+  const updated=document.getElementById("trackUpdated");
+  if(!timeline||!details) return;
+
+  const order=TRACK_STEPS.map(s=>s.key);
+  const hasReq=!!req;
+  const current=hasReq?Math.max(0,order.indexOf(req.status)):-1;
+  const rejected=hasReq&&req.requestStatus==="REJECTED";
+  const terminalError=hasReq&&(rejected||req.requestStatus==="CANCELLED");
+  card.classList.toggle("is-empty",!hasReq);
+  [...card.classList].filter(name=>name.startsWith("stage-")).forEach(name=>card.classList.remove(name));
+  if(hasReq) card.classList.add("stage-"+String(req.requestStatus||"").toLowerCase());
+
+  timeline.innerHTML='<span class="timeline-rail" aria-hidden="true"></span>'+TRACK_STEPS.map((step,i)=>{
+    const done=hasReq&&(i<current||(req.status==="ready"&&i===current&&req.requestStatus!=="COMPLETED"));
+    const active=hasReq&&i===current&&!done;
+    const cls=done?"is-complete":active?(terminalError?"is-rejected":"is-active"):"is-pending";
+    const date=hasReq&&req.dates?trackDate(req.dates[step.key]):"";
+    const sub=done?"Completed":active
+      ?(rejected?"Rejected":req.requestStatus==="CANCELLED"?"Cancelled":req.requestStatus==="COMPLETED"?"Completed":req.status==="needs_correction"?"Action Needed":"In Progress")
+      :"";
+    return `<div class="timeline-step step-${step.key} ${cls}"${active?' aria-current="step"':''}>
+      <span class="step-node" aria-hidden="true">${done?'<svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>':''}</span>
+      <div class="step-pill">
+        <span class="step-ico" aria-hidden="true">${TRACK_ICONS[step.key]}</span>
+        <span class="step-text"><strong>${step.label}</strong>${sub?`<small>${sub}</small>`:''}</span>
+        <span class="step-date">${trackEsc(date)}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  if(!hasReq){
+    subtitle.textContent="Choose a tracking number or upload your request QR code.";
+    updated.textContent="—";
+    details.innerHTML=`<div class="track-empty">
+      <span class="track-empty-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <h3>No request yet</h3>
+      <p>Enter your tracking number or upload your request QR image to see the status, progress and expected completion date.</p>
+      <p class="track-empty-hint">Your tracking number and QR code are in the email and request slip sent after submission.</p>
+    </div>`;
+    return;
+  }
+
+  const step=TRACK_STEPS[current];
+  const pct=TRACK_PROGRESS[req.status]||0;
+  const statusText=rejected?"Rejected":(req.statusLabel|| (req.status==="ready"?"Ready":"In Progress"));
+  const rejectionReason = req.requestStatus === "REJECTED" || req.requestStatus === "CANCELLED" ? req.reason : "";
+  const showExpected = !(req.requestStatus === "REJECTED" || req.requestStatus === "CANCELLED");
+  const requesterName=trackEsc(req.requesterName||"—");
+  subtitle.textContent="Tracking #"+req.requestNo;
+  details.innerHTML=`<h3 class="track-info-heading">Request Information</h3>
+    <dl class="track-facts">
+      <dt>Requester:</dt><dd>${requesterName}</dd>
+      <dt>Date Requested:</dt><dd>${trackEsc(trackFullDate(req.dates&&req.dates.submitted)||"—")}</dd>
+      <dt>Document:</dt><dd>${trackEsc(req.documentName||"—")}</dd>
+    </dl>
+    <h3 class="track-info-heading">Progress</h3>
+    <dl class="track-facts">
+      <dt>Status:</dt><dd${terminalError?' class="track-rejected-text"':''}>${statusText}</dd>
+      <dt>Details:</dt><dd>${trackEsc(req.description||step.description)}</dd>
+      ${rejectionReason ? `<dt>Reason:</dt><dd>${trackEsc(rejectionReason)}</dd>` : ""}
+      ${rejected?"":`<dt>Status summary:</dt><dd class="track-pct"><span>${pct}%</span></dd>`}
+    </dl>
+    ${rejected?"":`<div class="track-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>`}
+    ${showExpected ? `<dl class="track-facts"><dt>Expected Completion:</dt><dd>${trackEsc(req.completionDate||"To be announced")}</dd></dl>` : ""}`;
+  updated.textContent=req.updatedAt?new Date(req.updatedAt).toLocaleString([],{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"}):"—";
+}
+
+// Looks up the tracking number on the server; status details are shown only for a matching request.
+// quiet = true is the automatic refresh: no messages, no flicker, and it stops by itself when the server says no.
+let trackRef="",trackTimer=null,trackLastJson="",trackLookupDebounce=null,trackLookupAttempt=0;
+async function lookupTrack(ref,quiet){
+  const value=String(ref||"").trim();
+  const msg=document.getElementById("trackLookupMsg");
+  const input=document.getElementById("trackRefInput");
+  const say=(text,isError)=>{if(quiet)return;msg.textContent=text;msg.classList.toggle("error",!!isError);};
+  if(!value){say("",false);renderTrack(null);return;}
+  const attempt=++trackLookupAttempt;
+  say("Looking for your request…");
+  try{
+    const params={ref:value};
+    if(quiet) params.live="1";
+    const res=await fetch("../api/track.php?"+new URLSearchParams(params),{
+      credentials:"same-origin",
+      headers:{Accept:"application/json"}
+    });
+    if(attempt!==trackLookupAttempt)return;
+    if(quiet&&!res.ok){clearInterval(trackTimer);trackTimer=null;return;}
+    if(res.status===429){say("Too many tries. Please wait a few minutes and try again.",true);renderTrack(null);return;}
+    if(res.status===404){say("No request matches that tracking number. Please check the email we sent you.",true);renderTrack(null);return;}
+    if(!res.ok) throw new Error("bad status");
+    const data=await res.json();
+    if(attempt!==trackLookupAttempt)return;
+    if(!data||!data.request){say("Tracking number not found. Please check the email we sent you.",true);renderTrack(null);return;}
+    const json=JSON.stringify(data.request);
+    if(quiet&&json===trackLastJson) return;          // nothing changed
+    trackLastJson=json;
+    say("Request found.",false);
+    renderTrack(data.request);
+    if(!quiet){trackRef=value;startTrackPolling();}
+  }catch(e){
+    if(quiet||attempt!==trackLookupAttempt) return;
+    say("Tracking is not available right now. Please try again later.",true);
+    renderTrack(null);
+  }
+}
+// Real-time status: while the Track page is open and shows a request, it is refreshed every 10 seconds (and when the tab is opened again).
+function startTrackPolling(){
+  clearInterval(trackTimer);
+  trackTimer=setInterval(()=>{
+    const panel=document.getElementById("track");
+    if(!trackRef||document.hidden||!panel||panel.hidden) return;
+    lookupTrack(trackRef,true);
+  },10000);
+}
+document.addEventListener("visibilitychange",()=>{
+  const panel=document.getElementById("track");
+  if(!document.hidden&&trackRef&&panel&&!panel.hidden) lookupTrack(trackRef,true);
+});
+
+document.addEventListener("DOMContentLoaded",function(){
+  const form=document.getElementById("trackForm");
+  if(form) form.addEventListener("submit",function(e){
+    e.preventDefault();
+    const value=document.getElementById("trackRefInput").value.trim();
+    if(/^COLM-\d{8}-\d{5}$/i.test(value)) lookupTrack(value);
+  });
+});
+document.getElementById("trackRefInput").addEventListener("input",event=>{
+  clearTimeout(trackLookupDebounce);
+  const input=event.currentTarget;
+  const value=input.value.trim();
+  if(!/^COLM-\d{8}-\d{5}$/i.test(value)){
+    trackLookupAttempt++;
+    clearInterval(trackTimer);
+    trackTimer=null;
+    trackRef="";
+    trackLastJson="";
+    const message=document.getElementById("trackLookupMsg");
+    message.textContent="";
+    message.classList.remove("error");
+    renderTrack(null);
+    return;
+  }
+  trackLookupDebounce=setTimeout(()=>lookupTrack(value),350);
+});
+document.querySelectorAll("[data-track-mode]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const qrMode=button.dataset.trackMode==="qr";
+    document.querySelectorAll("[data-track-mode]").forEach(option=>{
+      const active=option===button;
+      option.classList.toggle("is-active",active);
+      option.setAttribute("aria-pressed",String(active));
+    });
+    document.getElementById("trackNumberMode").hidden=qrMode;
+    document.getElementById("trackQrMode").hidden=!qrMode;
+    const message=document.getElementById("trackLookupMsg");
+    message.textContent="";
+    message.classList.remove("error");
+    if(qrMode) document.getElementById("trackQrInput").focus();
+    else document.getElementById("trackRefInput").focus();
+  });
+});
+document.getElementById("trackQrInput").addEventListener("change",async event=>{
+  const file=event.target.files?.[0];
+  if(!file) return;
+  const message=document.getElementById("trackLookupMsg");
+  const uploadLabel=document.querySelector(".track-upload-label");
+  const say=(text,isError)=>{message.textContent=text;message.classList.toggle("error",!!isError);};
+  const setUploadState=state=>{
+    uploadLabel.classList.toggle("is-selected",state==="selected");
+    uploadLabel.classList.toggle("is-error",state==="error");
+  };
+  document.getElementById("trackQrFileName").textContent=file.name;
+  setUploadState("selected");
+  if(!file.type.startsWith("image/")){
+    setUploadState("error");
+    say("Choose an image containing your request QR code.",true);
+    event.target.value="";
+    return;
+  }
+  if(file.size>12*1024*1024){
+    setUploadState("error");
+    say("This image is too large to scan. Choose an image under 12 MB.",true);
+    event.target.value="";
+    return;
+  }
+  if(!window.jsQR){
+    setUploadState("error");
+    say("QR scanning could not load. Please use the tracking number option.",true);
+    event.target.value="";
+    return;
+  }
+  say("Scanning QR code…");
+  try{
+    const bitmap=await createImageBitmap(file);
+    const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const context=canvas.getContext("2d",{willReadFrequently:true});
+    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    bitmap.close();
+    const image=context.getImageData(0,0,canvas.width,canvas.height);
+    const decoded=window.jsQR(image.data,image.width,image.height,{inversionAttempts:"attemptBoth"});
+    if(!decoded) throw new Error("No QR code was found in that image. Choose a clear picture of the request QR code.");
+    const raw=decoded.data.trim();
+    let qrPayload=raw;
+    try{
+      const url=new URL(raw);
+      if(url.pathname.endsWith("/api/slip.php")) qrPayload=url.searchParams.get("t")||raw;
+    }catch(error){ /* the QR may contain plain text rather than a URL */ }
+    const qrMatch=qrPayload.match(/^COLM\|(COLM-\d{8}-\d{5})\|[a-f0-9]{32}$/i);
+    const trackingMatch=raw.match(/^COLM-\d{8}-\d{5}$/i);
+    const tracking=qrMatch?.[1]||trackingMatch?.[0];
+    if(!tracking) throw new Error("This QR code is not a COLM request QR code.");
+    document.getElementById("trackRefInput").value=tracking;
+    say("QR code scanned. Finding your request…");
+    await lookupTrack(tracking);
+  }catch(error){
+    setUploadState("error");
+    say(error.message||"Could not read the QR image. Please try a clearer image or enter the tracking number.",true);
+  }finally{
+    event.target.value="";
+  }
+});
+const brandHome=document.querySelector(".brand");
+const staffLoginSecret=document.getElementById("staffLoginSecret");
+let brandClicks=0,brandClickTimer;
+brandHome.addEventListener("click",function(){
+  brandClicks++;
+  clearTimeout(brandClickTimer);
+  if(brandClicks>=3){
+    staffLoginSecret.hidden=false;
+    staffLoginSecret.focus();
+    brandClicks=0;
+    return;
+  }
+  brandClickTimer=setTimeout(()=>{brandClicks=0;},2000);
+});
+renderTrack(null);
+const landingThemeToggle=document.getElementById("landingThemeToggle");
+function applyLandingTheme(dark){
+  document.documentElement.classList.toggle("dark",dark);
+  landingThemeToggle.setAttribute("aria-checked",String(dark));
+  landingThemeToggle.setAttribute("aria-label",dark?"Switch to light mode":"Switch to dark mode");
+}
+applyLandingTheme(document.documentElement.classList.contains("dark"));
+landingThemeToggle.addEventListener("click",()=>{
+  const dark=!document.documentElement.classList.contains("dark");
+  applyLandingTheme(dark);
+  try { localStorage.setItem("colmTheme",dark?"dark":"light"); } catch (error) {}
+});
+</script>
+</body>
+</html>

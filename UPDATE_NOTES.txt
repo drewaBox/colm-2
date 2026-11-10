@@ -1,0 +1,31 @@
+COLM - paglipat ng mga pagbabago mula colm-main papunta sa hostinger
+=====================================================================
+I-upload ang laman ng folder "hostinger_code" sa public_html at i-overwrite ang mga file.
+HUWAG galawin: .env, storage/, vendor/, .htaccess.
+
+AYOS (bug sa hostinger)
+- frontend/js/audit.js : kopya pala ito ng login script (auth.js), kaya sira ang Audit page. Naibalik ang tamang audit.js.
+
+NAILIPAT MULA colm-main
+1. Academic Management: ang Year Levels ay naka-group na sa bawat Course (dropdown).
+   (frontend/js/academic.js, frontend/css/style.css)
+2. Audit display name sa Accounts (Save name). Ito ang lalabas na pangalan sa Audit at activity logs.
+   (api/users.php, api/audit.php, api/release.php, api/requests.php, frontend/js/manage.js, frontend/manage.html)
+3. Editable "Processing email message" sa Settings (admin). May email sa estudyante kapag nalagyan o nabago ang expected release date.
+   (api/email_templates.php, frontend/js/email_templates.js, backend/mailer.php, backend/release.php, api/release.php, frontend/manage.html)
+4. Duplicate-receipt lock sa pag-upload ng receipt (para hindi mag-slip ang dalawang sabay na upload). Nanatili ang pay-on-release at registrar access ng hostinger.
+   (api/payments.php)
+5. Auto-repair ng login_attempts table + schema check. (backend/database.php, backend/helpers.php)
+6. Bagong itsura ng active menu, staff portal polish, at aria-current. (frontend/css/*.css, frontend/js/navigation.js)
+
+DATABASE
+- Awtomatiko sa unang request pagkatapos ng upload (nilipat ang marker sa .schema_release_v3).
+- Kung gusto mo manual: patakbuhin ang database/migrations/003_audit_name_and_email_template.sql sa phpMyAdmin.
+- Walang binubura. Backup muna ng database bago mag-upload.
+
+HINDI NILIPAT (magkasalungat sa hostinger, kailangan ng desisyon)
+- Receipt-first payment (ADVANCE) at ang "Release Document" button ng colm-main. Pay-on-release ang hostinger.
+- Admin-only na access / limitadong registrar.
+- Request History page (nagtatago ng rejected requests sa All Requests).
+- Guest OTP 5 minuto at ang bagong check_students / track rate limit.
+- Standalone track.html at index.html/newrequest.js/requests.js ng colm-main (mas bago ang hostinger sa mga ito).
